@@ -71,6 +71,7 @@ package:
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
+        $(RMDIR) $(DEBPKGOUTPUT_DIR)
 	$(RMDIR) $(DEBPKGBUILD_DIR)
 	$(RM) *.deb
 	$(RM) *.orig.tar.gz
