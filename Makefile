@@ -25,6 +25,9 @@ DEBPKGUSER = Nobody
 DEBPKGEMAIL = <nobody@example.org>
 
 DEBPKGBUILD_DIR = quaggasrc
+# The output dir for the packages needed to install
+DEBPKGOUTPUT_DIR = debian_package
+DEB_PACKAGES = opnfv-quagga_$(VERSION)-git.*_amd64.deb
 
 # Build Date
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
@@ -64,10 +67,13 @@ package:
 	#
 	# Build the Debian Source and Binary Package
 	cd $(DEBPKGBUILD_DIR); $(DEBUILD) -us -uc
+	$(MKDIR) $(DEBPKGOUTPUT_DIR)
+	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
 	$(RMDIR) $(DEBPKGBUILD_DIR)
+	$(RMDIR) $(DEBPKGOUTPUT_DIR)
 	$(RM) *.deb
 	$(RM) *.orig.tar.gz
 	$(RM) *.debian.tar.gz
