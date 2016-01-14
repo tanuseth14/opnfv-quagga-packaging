@@ -56,6 +56,7 @@ override_dh_auto_configure:
  		--enable-rtadv \
  		--enable-gcc-rdynamic \
 		--with-libpam \
+		--with-zeromq \
 		--with-pkg-extra-version=-OPNFV-%_VERSION_%-%_RELEASE_%
 	
 	if ! diff -b -IHAVE_SNMP -IHAVE_NETSNMP -IUCD_COMPAT -IGETIFADDR debian/my/config.h.reference config.h; then \
