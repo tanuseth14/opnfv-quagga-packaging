@@ -1,7 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Quagga
 Upstream-Contact: maintainers@quagga.net
-Upstream-Contact: security@quagga.net
 Source: http://www.quagga.net/
 
 Files: *
