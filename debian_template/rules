@@ -80,6 +80,11 @@ override_dh_auto_install:
 	
 	# cleaning up the info dir
 	rm -f debian/tmp/usr/share/info/dir*
+
+	# install Quagga Thrift Interface
+	mkdir -p debian/tmp/usr/lib/quagga/qthrift
+	cp -a qthrift/* debian/tmp/usr/lib/quagga/qthrift/
+	chmod 755 debian/tmp/usr/lib/quagga/qthrift/*.py
 	
 	# install config files
 	mkdir -p debian/tmp/etc/quagga/

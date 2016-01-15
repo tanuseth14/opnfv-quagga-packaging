@@ -3,8 +3,12 @@ ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
 QUAGGAGIT = ssh://git@git-us.netdef.org:7999/osr/quagga-capn.git
-QUAGGAREV = ad59d1af
+QUAGGAREV = ad59d1a
 RELEASE = 1
+
+# URL and Revision for ODL Thrift Interface
+QTHRIFTGIT = ssh://git@git-us.netdef.org:7999/osr/odlvpn2bgpd.git
+QTHRIFTREV = bf70b5d
 
 MKDIR = /bin/mkdir -p
 MV = /bin/mv
@@ -17,12 +21,16 @@ THISDIR = $(shell pwd)
 INSTALL = /usr/bin/install
 DEBUILD = /usr/bin/debuild
 GROFF = /usr/bin/groff
+PATCH = /usr/bin/patch
 
 # Matching Quagga Package Version
 VERSION = 0.99.24.99
 SOURCEURL = http://www.quagga.net/
-DEBPKGUSER = Nobody
-DEBPKGEMAIL = <nobody@example.org>
+# We try to get username and hostname from system, but could be manually set if preferred
+#DEBPKGUSER = Nobody
+#DEBPKGEMAIL = <nobody@example.com>
+DEBPKGUSER = $(shell getent passwd $LOGNAME | cut -d: -f5 | cut -d, -f1)
+DEBPKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
 
 DEBPKGBUILD_DIR = quaggasrc
 # The output dir for the packages needed to install
@@ -41,13 +49,16 @@ package:
 	@echo -------------------------------------------------------------------------
 	@echo
 
-	# Create Source Tar file
+	
 	rm -rf $(DEBPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(DEBPKGBUILD_DIR)
 	cd $(DEBPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
 	$(GROFF) -ms $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.ms -T ascii > $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.txt
 	cd $(DEBPKGBUILD_DIR); ./bootstrap.sh
-	cd ..
+	git clone $(QTHRIFTGIT) $(DEBPKGBUILD_DIR)/qthrift
+	cd $(DEBPKGBUILD_DIR)/qthrift; git checkout $(QTHRIFTREV)
+	cd $(DEBPKGBUILD_DIR)/qthrift; $(PATCH) -p1 < ../../patches/10-qthrift-bgpd_location.patch	
+	# Pack Up Source
 	tar --exclude=".*" -czf opnfv-quagga_$(VERSION).orig.tar.gz $(DEBPKGBUILD_DIR)
 
 	# Build Debian Pkg Scripts and configs from templates
@@ -64,11 +75,15 @@ package:
 	$(SED) -i 's/%_EMAIL_%/$(DEBPKGEMAIL)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's|%_QTHRIFTGIT_%|$(QTHRIFTGIT)|g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's/%_QTHRIFTREV_%/$(QTHRIFTREV)/g' $(DEBPKGBUILD_DIR)/debian/changelog 
 	#    debian/rules
 	$(SED) -i 's/%_VERSION_%/$(VERSION)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	$(SED) -i 's/%_RELEASE_%/$(RELEASE)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(DEBPKGBUILD_DIR)/debian/rules
 	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(DEBPKGBUILD_DIR)/debian/rules
+	$(SED) -i 's|%_QTHRIFTGIT_%|$(QTHRIFTGIT)|g' $(DEBPKGBUILD_DIR)/debian/rules
+	$(SED) -i 's/%_QTHRIFTREV_%/$(QTHRIFTREV)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	#
 	# Build the Debian Source and Binary Package
 	# TEMP FIX:
