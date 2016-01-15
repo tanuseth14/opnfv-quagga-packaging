@@ -2,12 +2,12 @@
 ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
-QUAGGAGIT = ssh://git@git-us.netdef.org:7999/osr/quagga-capn.git
-QUAGGAREV = ad59d1a
+QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capn-temp.git
+QUAGGAREV = 305b727
 RELEASE = 1
 
 # URL and Revision for ODL Thrift Interface
-QTHRIFTGIT = ssh://git@git-us.netdef.org:7999/osr/odlvpn2bgpd.git
+QTHRIFTGIT = https://git.netdef.org/scm/osr/odlvpn2bgpd.git
 QTHRIFTREV = bf70b5d
 
 MKDIR = /bin/mkdir -p
