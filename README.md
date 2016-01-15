@@ -50,3 +50,11 @@ with:
     make
 
 Package to be installed end up in debian_package/ subdirectory
+Install the package with
+
+   dpkg -i debian_package/opnfv-quagga*
+
+opnfv-quagga will be automatically started on installation and after any
+reboots. To manually stop daemon use `service opnfv-quagga stop` and restart
+again with `service opnfv-quagga start`
+

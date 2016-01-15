@@ -106,11 +106,11 @@ override_dh_auto_install:
 	sed -i "/dependency_libs/ s/'.*'/''/" debian/tmp/usr/lib/*.la
 
 override_dh_installinit:
-	dh_installinit --name=quagga
+	dh_installinit
 
 override_dh_installlogrotate:
-	dh_installlogrotate --name=quagga
+	dh_installlogrotate
 
 override_dh_installpam:
-	dh_installpam --name=quagga
+	dh_installpam
 

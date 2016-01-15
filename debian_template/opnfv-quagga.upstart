@@ -1,0 +1,10 @@
+description "OPNFV-Quagga"
+author "mwinter@netdef.org"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+
+exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py
+
