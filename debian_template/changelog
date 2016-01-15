@@ -1,6 +1,8 @@
 opnfv-quagga (%_VERSION_%-%_RELEASE_%) unstable; urgency=low
 
   * OPNFV Build of Quagga with Thrift Interface by %_USER_%
+  * Built based on Quagga Git Rev %_QUAGGAREV_% from
+    %_QUAGGAGIT_%
 
  -- %_USER_% %_EMAIL_%  %_DATE_%
 

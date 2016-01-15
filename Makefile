@@ -3,7 +3,8 @@ ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
 QUAGGAGIT = ssh://git@git-us.netdef.org:7999/osr/quagga-capn.git
-QUAGGAREV = bad46ba9
+QUAGGAREV = ad59d1af
+RELEASE = 1
 
 MKDIR = /bin/mkdir -p
 MV = /bin/mv
@@ -19,7 +20,6 @@ GROFF = /usr/bin/groff
 
 # Matching Quagga Package Version
 VERSION = 0.99.24.99
-RELEASE = git.$(QUAGGAREV)
 SOURCEURL = http://www.quagga.net/
 DEBPKGUSER = Nobody
 DEBPKGEMAIL = <nobody@example.org>
@@ -27,7 +27,7 @@ DEBPKGEMAIL = <nobody@example.org>
 DEBPKGBUILD_DIR = quaggasrc
 # The output dir for the packages needed to install
 DEBPKGOUTPUT_DIR = debian_package
-DEB_PACKAGES = opnfv-quagga_$(VERSION)-git.*_amd64.deb
+DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
 
 # Build Date
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
@@ -36,7 +36,8 @@ package:
 	@echo 
 	@echo
 	@echo Building opnfv-quagga $(VERSION) Ubuntu Pkg
-	@echo    Using Quagga from $(QUAGGAGIT), Git Rev $(QUAGGAREV)
+	@echo    Using Quagga from $(QUAGGAGIT)
+	@echo    opnfv-quagga $(VERSION)-$(RELEASE), Git Rev $(QUAGGAREV)
 	@echo -------------------------------------------------------------------------
 	@echo
 
@@ -61,9 +62,13 @@ package:
 	$(SED) -i 's/%_DATE_%/$(DATE)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's/%_USER_%/$(DEBPKGUSER)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's/%_EMAIL_%/$(DEBPKGEMAIL)/g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	#    debian/rules
 	$(SED) -i 's/%_VERSION_%/$(VERSION)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	$(SED) -i 's/%_RELEASE_%/$(RELEASE)/g' $(DEBPKGBUILD_DIR)/debian/rules
+	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(DEBPKGBUILD_DIR)/debian/rules
+	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	#
 	# Build the Debian Source and Binary Package
 	# TEMP FIX:
