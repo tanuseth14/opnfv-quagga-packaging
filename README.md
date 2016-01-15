@@ -17,7 +17,7 @@ To build the package, the following Ubuntu package need to be installed:
         texlive-generic-recommended imagemagick ghostscript groff \
         hardening-wrapper libpcre3-dev chrpath libpam0g-dev \
         python2.7 python2.7-dev pkg-config libzmq3-dev \
-        python-pip python-zmq
+        python-pip python-zmq cython
 
 Afterwards, install Cap'N'Proto from git source (requires 0.6 minium
 and no package exists yet for required version):
@@ -29,13 +29,24 @@ and no package exists yet for required version):
     ./configure
     make -j6 check
     sudo make install
-    # Fix for debuild only checking /usr/bin and not /usr/local/bin
-    sudo ln -s /usr/local/bin/capnp /usr/bin
     cd ../..
     rm -rf capnproto
 
 Now install Python Cap'N'Proto interface:
 
-    sudo pip install pycapnp thriftpy
+    sudo pip install pycapnp
 
+And finally install (enhanced version) of thriftpy from git:
 
+    git clone git clone https://git.netdef.org/scm/osr/thriftpy.git
+    cd thriftpy
+    sudo python ./setup.py install
+    cd ..
+    sudo rm -rf thriftpy
+
+After this pre-requisites are installed, build the OPNFV Version of Quagga
+with:
+
+    make
+
+Package to be installed end up in debian_package/ subdirectory
