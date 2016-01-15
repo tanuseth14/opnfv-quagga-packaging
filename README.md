@@ -58,3 +58,24 @@ opnfv-quagga will be automatically started on installation and after any
 reboots. To manually stop daemon use `service opnfv-quagga stop` and restart
 again with `service opnfv-quagga start`
 
+### Testing:
+There is a simple python test script which connects to server and can be
+used for a simple installation/running test:
+
+    cd /usr/lib/quagga/qthrift
+    ./testclient.py
+
+Expected output:
+
+    /usr/lib/quagga/qthrift$ sudo ./testclient.py 
+    0
+    received call onStartConfigResyncNotification()
+    received call onUpdatePushRoute(u'64603:1111', u'10.3.0.0', 16, u'192.168.1.150', 200)
+    received call onUpdatePushRoute(u'64603:1111', u'10.4.1.0', 24, u'192.168.1.151', 200)
+    received call onUpdateWithdrawRoute(u'64603:1111', u'10.3.0.0', 16)
+    Routes(more=0, errcode=0, updates=[Update(reserved=None, nexthop=u'192.168.1.151', label=200, rd=u'64603:1111', prefix=u'10.4.1.0', prefixlen=24, type=0)])
+    received call onUpdatePushRoute(u'64603:1111', u'10.3.0.0', 16, u'192.168.1.150', 200)
+    received call onUpdateWithdrawRoute(u'64603:1111', u'10.3.0.0', 16)
+    Routes(more=0, errcode=0, updates=[Update(reserved=None, nexthop=u'192.168.1.151', label=200, rd=u'64603:1111', prefix=u'10.4.1.0', prefixlen=24, type=0)])
+    [...]
+
