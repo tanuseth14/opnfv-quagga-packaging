@@ -53,6 +53,7 @@ package:
 	rm -rf $(DEBPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(DEBPKGBUILD_DIR)
 	cd $(DEBPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
+	cd $(DEBPKGBUILD_DIR); patch -Np1 -i ../patches/0001-Allow-to-use-capnp-0.5.99.patch
 	$(GROFF) -ms $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.ms -T ascii > $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.txt
 	cd $(DEBPKGBUILD_DIR); ./bootstrap.sh
 	git clone $(QTHRIFTGIT) $(DEBPKGBUILD_DIR)/qthrift

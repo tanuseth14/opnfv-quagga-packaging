@@ -1,0 +1,25 @@
+From 1870454b219cc12edf333130cc5f5470a9c53919 Mon Sep 17 00:00:00 2001
+From: nihilus <nihilus@l3vpn-test.local.sublab.org>
+Date: Mon, 25 Jan 2016 13:40:21 +0000
+Subject: [PATCH] Allow to use capnp 0.5.99
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 9405de5..652c541 100755
+--- a/configure.ac
++++ b/configure.ac
+@@ -1523,7 +1523,7 @@ dnl -----------
+ dnl Cap'n Proto
+ dnl -----------
+ if test "$with_zeromq" != "no"; then
+-  PKG_CHECK_MODULES(CAPNP, [capnp >= 0.6], [], [
++  PKG_CHECK_MODULES(CAPNP, [capnp >= 0.5.99], [], [
+     AC_MSG_ERROR([configuration specifies --with-zeromq but cap'n proto not found or too old (0.6-dev required)])
+   ])
+ fi
+-- 
+2.1.4
+
