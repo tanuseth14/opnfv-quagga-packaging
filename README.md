@@ -17,7 +17,8 @@ To build the package, the following Ubuntu package need to be installed:
         texlive-generic-recommended imagemagick ghostscript groff \
         hardening-wrapper libpcre3-dev chrpath libpam0g-dev \
         python2.7 python2.7-dev pkg-config libzmq3-dev \
-        python-pip python-zmq cython git-buildpackage
+        python-pip python-zmq cython git-buildpackage python-all \
+        docbook-xsl docbook-xml xsltproc dh-autoreconf
 
 Afterwards, install Cap'N'Proto from git source (requires 0.6 minium
 and no package exists yet for required version):
