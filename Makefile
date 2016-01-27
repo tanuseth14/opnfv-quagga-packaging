@@ -13,6 +13,9 @@ QTHRIFTREV = bf70b5d
 # URL for Python Thrift Library
 THRIFTPYGIT = https://git.netdef.org/scm/osr/thriftpy.git
 
+# URL for Capnproto Library
+CAPNPROTOGIT = https://git.netdef.org/scm/osr/capnproto.git
+
 MKDIR = /bin/mkdir -p
 MV = /bin/mv
 RM = /bin/rm -f
@@ -46,7 +49,7 @@ DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 
 
-all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb
+all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb
 	
 $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): 
 	@echo 
@@ -103,6 +106,36 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
 
+$(DEPPKGDIR)/capnproto-deb:
+	@echo 
+	@echo
+	@echo Building capnproto Ubuntu Pkg 0.5.99
+	@echo    Using capnproto from $(CAPNPROTOGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/capnproto*
+	rm -rf $(DEPPKGDIR)/libcapnp*
+	rm -rf $(DEBPKGOUTPUT_DIR)/capnproto*
+	rm -rf $(DEBPKGOUTPUT_DIR)/libcapnp*
+	#
+	# Build debian package
+	git clone $(CAPNPROTOGIT) $(DEPPKGDIR)/capnproto
+	cd $(DEPPKGDIR)/capnproto; tar czf capnproto_0.5.99.orig.tar.gz c++
+	cd $(DEPPKGDIR)/capnproto/c++; $(DEBUILD) -us -uc
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(DEBPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/capnproto/capnproto*.deb $(DEBPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/capnproto/libcapnp*.deb $(DEBPKGOUTPUT_DIR)
+	# 
+	# Create dummy flag file with filename for Makefile logic
+	cd debian_package; ls capnproto*.deb > $(DEPPKGDIR)/capnproto-deb 2> /dev/null
+	cd debian_package; ls libcapnp-[0-9]*.deb > $(DEPPKGDIR)/libcapnp-deb 2> /dev/null
+	cd debian_package; ls libcapnp-dev*.deb > $(DEPPKGDIR)/libcapnp-dev-deb 2> /dev/null
+
 $(DEPPKGDIR)/python-thriftpy-deb:
 	@echo 
 	@echo
@@ -124,6 +157,8 @@ $(DEPPKGDIR)/python-thriftpy-deb:
 	# Save Package to Output Directory
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEPPKGDIR)/python-thriftpy*.deb $(DEBPKGOUTPUT_DIR)
+	# 
+	# Create dummy flag file with filename for Makefile logic
 	cd debian_package; ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
 
 clean:
