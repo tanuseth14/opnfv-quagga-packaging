@@ -69,9 +69,9 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
-	# Build pkg_config temp config
-	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/capnp-rpc.pc $(TEMPDIR)/capnp-rpc.pc
-	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/capnp-rpc.pc
+	# Build capnp pkg_config temp config
+	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/*.pc $(TEMPDIR)/
+	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
 	
 	# Checkout and patch (if needed) the Capnproto Quagga Version and Thrift Interface
 	#
