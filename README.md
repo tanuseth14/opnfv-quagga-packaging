@@ -20,32 +20,17 @@ To build the package, the following Ubuntu package need to be installed:
         python-pip python-zmq cython git-buildpackage python-all \
         docbook-xsl docbook-xml xsltproc dh-autoreconf
 
-Afterwards, install Cap'N'Proto from git source (requires 0.6 minium
-and no package exists yet for required version):
-
-    git clone https://github.com/sandstorm-io/capnproto.git
-    cd capnproto/c++
-    git checkout 9afcada819b13
-    autoreconf -i
-    ./configure
-    make -j6 check
-    sudo make install
-    cd ../..
-    rm -rf capnproto
-
-Now install Python Cap'N'Proto interface:
-
-    sudo pip install pycapnp
-
 After this pre-requisites are installed, build the OPNFV Version of Quagga
 with:
 
     make
 
 Packages to be installed end up in debian_package/ subdirectory
-Install the package with
+Install the packages with
 
     dpkg -i debian_package/*
+    # Fix missing dependencies from public repo
+    apt-get -f install
 
 opnfv-quagga will be automatically started on installation and after any
 reboots. To manually stop daemon use `service opnfv-quagga stop` and restart
