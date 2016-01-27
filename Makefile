@@ -10,6 +10,9 @@ RELEASE = 1
 QTHRIFTGIT = https://git.netdef.org/scm/osr/odlvpn2bgpd.git
 QTHRIFTREV = bf70b5d
 
+# URL for Python Thrift Library
+THRIFTPYGIT = https://git.netdef.org/scm/osr/thriftpy.git
+
 MKDIR = /bin/mkdir -p
 MV = /bin/mv
 RM = /bin/rm -f
@@ -18,10 +21,12 @@ COPY = /bin/cp -a
 TAR = /bin/tar
 SED = /bin/sed
 THISDIR = $(shell pwd)
+DEPPKGDIR = $(THISDIR)/depend
 INSTALL = /usr/bin/install
 DEBUILD = /usr/bin/debuild
 GROFF = /usr/bin/groff
 PATCH = /usr/bin/patch
+GBP = /usr/bin/gbp
 
 # Matching Quagga Package Version
 VERSION = 0.99.24.99
@@ -40,7 +45,10 @@ DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
 # Build Date
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 
-package: 
+
+all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb
+	
+$(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): 
 	@echo 
 	@echo
 	@echo Building opnfv-quagga $(VERSION) Ubuntu Pkg
@@ -48,7 +56,6 @@ package:
 	@echo    opnfv-quagga $(VERSION)-$(RELEASE), Git Rev $(QUAGGAREV)
 	@echo -------------------------------------------------------------------------
 	@echo
-
 	
 	rm -rf $(DEBPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(DEBPKGBUILD_DIR)
@@ -91,14 +98,39 @@ package:
 	#  - Need to add /usr/local/bin  to path (for captnproto installation outside
 	#    of package
 	#  - Disable DejaGNU checks as they are currently still broken
-	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck --prepend-path /usr/local/bin -us -uc
+	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck -us -uc
+	# cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck --prepend-path /usr/local/bin -us -uc
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
+
+$(DEPPKGDIR)/python-thriftpy-deb:
+	@echo 
+	@echo
+	@echo Building thriftpy Ubuntu Pkg
+	@echo    Using thriftpy from $(THRIFTPYGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/thriftpy*
+	rm -rf $(DEPPKGDIR)/python-thriftpy*
+	rm -rf $(DEBPKGOUTPUT_DIR)/python-thriftpy*
+	#
+	# Build debian package
+	git clone $(THRIFTPYGIT) $(DEPPKGDIR)/thriftpy
+	cd $(DEPPKGDIR)/thriftpy; $(GBP) buildpackage -us -uc
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(DEBPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/python-thriftpy*.deb $(DEBPKGOUTPUT_DIR)
+	cd debian_package; ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
 	$(RMDIR) $(DEBPKGBUILD_DIR)
 	$(RMDIR) $(DEBPKGOUTPUT_DIR)
+	$(RMDIR) $(DEPPKGDIR)
 	$(RM) *.deb
 	$(RM) *.orig.tar.gz
 	$(RM) *.debian.tar.gz
