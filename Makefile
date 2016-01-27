@@ -16,6 +16,9 @@ THRIFTPYGIT = https://git.netdef.org/scm/osr/thriftpy.git
 # URL for Capnproto Library
 CAPNPROTOGIT = https://git.netdef.org/scm/osr/capnproto.git
 
+# URL for Python Capnproto Interface
+PYCAPNPGIT = https://git.netdef.org/scm/osr/pycapnp.git
+
 MKDIR = /bin/mkdir -p
 MV = /bin/mv
 RM = /bin/rm -f
@@ -50,7 +53,7 @@ DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 
 
-all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb
+all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb $(DEPPKGDIR)/python-pycapnp-deb
 	
 $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	@echo 
@@ -175,6 +178,56 @@ $(DEPPKGDIR)/python-thriftpy-deb:
 	# 
 	# Create dummy flag file with filename for Makefile logic
 	cd debian_package; ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
+
+$(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
+	@echo 
+	@echo
+	@echo Building thriftpy Ubuntu Pkg
+	@echo    Using thriftpy from $(PYCAPNPGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Hack: We don't have capnproto installed yet (needs priv to install and we
+	#       just built it. So we unpack library to temp directory and add it to paths
+	#       from temp directory
+	#
+	rm -rf $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
+	# Build capnp pkg_config temp config
+	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/*.pc $(TEMPDIR)/
+	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
+	# Get shlib info from libcapnp
+	dpkg -e $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)/libcapnp-control
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/pycapnp*
+	rm -rf $(DEPPKGDIR)/python-pycapnp*
+	rm -rf $(DEBPKGOUTPUT_DIR)/python-pycapnp*
+	#
+	# Build debian package
+	git clone $(PYCAPNPGIT) $(DEPPKGDIR)/pycapnp
+	# Remove capnproto build-dependency (we use temp unpacked version)
+	$(SED) -i 's|cython, capnproto, libcapnp-dev|cython|g' $(DEPPKGDIR)/pycapnp/debian/control
+	# Add capnproto library dependency
+	$(SED) -i 's|misc:Depends}|misc:Depends}, libcapnp (>= 0.5.99)|g' $(DEPPKGDIR)/pycapnp/debian/control
+	# Add shlibs from libcapnproto (can't be auto-determined as it's not installed at this time)
+	cat $(TEMPDIR)/libcapnp-control/shlibs >> $(DEPPKGDIR)/pycapnp/debian/shlibs.local
+	cd $(DEPPKGDIR); tar czf pycapnp_0.5.7.orig.tar.gz pycapnp
+	cd $(DEPPKGDIR)/pycapnp; debuild  --prepend-path $(TEMPDIR)/usr/bin \
+	    --set-envvar CPATH=$(TEMPDIR)/usr/include \
+	    --set-envvar LIBRARY_PATH=$(TEMPDIR)/usr/lib \
+	    --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib -us -uc
+	# cd $(DEPPKGDIR)/pycapnp; debuild  --prepend-path $(TEMPDIR)/usr/bin --set-envvar PKG_CONFIG_PATH=$(TEMPDIR) --set-envvar CPATH=$(TEMPDIR)/usr/include --set-envvar LIBRARY_PATH=$(TEMPDIR)/usr/lib --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib -us -uc
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(DEBPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/python-pycapnp*.deb $(DEBPKGOUTPUT_DIR)
+	# 
+	# Create dummy flag file with filename for Makefile logic
+	cd debian_package; ls python-pycapnp*.deb > $(DEPPKGDIR)/python-pycapnp-deb 2> /dev/null
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
