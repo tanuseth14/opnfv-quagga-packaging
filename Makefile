@@ -212,7 +212,7 @@ $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	# Remove capnproto build-dependency (we use temp unpacked version)
 	$(SED) -i 's|cython, capnproto, libcapnp-dev|cython|g' $(DEPPKGDIR)/pycapnp/debian/control
 	# Add capnproto library dependency
-	$(SED) -i 's|misc:Depends}|misc:Depends}, libcapnp (>= 0.5.99)|g' $(DEPPKGDIR)/pycapnp/debian/control
+	$(SED) -i 's|misc:Depends}|misc:Depends}, libcapnp-0.5.99|g' $(DEPPKGDIR)/pycapnp/debian/control
 	# Add shlibs from libcapnproto (can't be auto-determined as it's not installed at this time)
 	cat $(TEMPDIR)/libcapnp-control/shlibs >> $(DEPPKGDIR)/pycapnp/debian/shlibs.local
 	cd $(DEPPKGDIR); tar czf pycapnp_0.5.7.orig.tar.gz pycapnp
