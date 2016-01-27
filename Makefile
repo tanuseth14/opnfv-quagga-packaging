@@ -25,6 +25,7 @@ TAR = /bin/tar
 SED = /bin/sed
 THISDIR = $(shell pwd)
 DEPPKGDIR = $(THISDIR)/depend
+TEMPDIR = $(THISDIR)/temp
 INSTALL = /usr/bin/install
 DEBUILD = /usr/bin/debuild
 GROFF = /usr/bin/groff
@@ -51,7 +52,7 @@ DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 
 all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb
 	
-$(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): 
+$(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
 	@echo 
 	@echo
 	@echo Building opnfv-quagga $(VERSION) Ubuntu Pkg
@@ -60,6 +61,20 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
 	@echo -------------------------------------------------------------------------
 	@echo
 	
+	# Hack: We don't have capnproto installed yet (needs priv to install and we
+	#       just built it. So we unpack library to temp directory and add it to paths
+	#       from temp directory
+	#
+	rm -rf $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
+	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
+	# Build pkg_config temp config
+	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/capnp-rpc.pc $(TEMPDIR)/capnp-rpc.pc
+	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/capnp-rpc.pc
+	
+	# Checkout and patch (if needed) the Capnproto Quagga Version and Thrift Interface
+	#
 	rm -rf $(DEBPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(DEBPKGBUILD_DIR)
 	cd $(DEBPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
@@ -73,6 +88,7 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
 	tar --exclude=".*" -czf opnfv-quagga_$(VERSION).orig.tar.gz $(DEBPKGBUILD_DIR)
 
 	# Build Debian Pkg Scripts and configs from templates
+	#
 	rm -rf debian
 	cp -a debian_template $(DEBPKGBUILD_DIR)/debian
 	#
@@ -97,12 +113,11 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
 	$(SED) -i 's/%_QTHRIFTREV_%/$(QTHRIFTREV)/g' $(DEBPKGBUILD_DIR)/debian/rules
 	#
 	# Build the Debian Source and Binary Package
+	#  - Need to add reference to local Capnproto as we can't assume correct version
+	#    to be installed (needs 0.5.99 or higher)
 	# TEMP FIX:
-	#  - Need to add /usr/local/bin  to path (for captnproto installation outside
-	#    of package
 	#  - Disable DejaGNU checks as they are currently still broken
-	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck -us -uc
-	# cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck --prepend-path /usr/local/bin -us -uc
+	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck --set-envvar PKG_CONFIG_PATH=$(TEMPDIR) --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib --prepend-path $(TEMPDIR)/usr/bin -us -uc
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
 

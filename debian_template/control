@@ -10,7 +10,7 @@ Homepage: http://www.quagga.net/
 
 Package: opnfv-quagga
 Architecture: any
-Depends: ${shlibs:Depends}, logrotate (>= 3.2-11), iproute, ${misc:Depends}, python (< 3.0)
+Depends: ${shlibs:Depends}, logrotate (>= 3.2-11), iproute, ${misc:Depends}, python2.7, libcapnp (>= 0.5.99)
 Pre-Depends: adduser
 Conflicts: zebra, zebra-pj, quagga
 Replaces: zebra, zebra-pj, quagga
