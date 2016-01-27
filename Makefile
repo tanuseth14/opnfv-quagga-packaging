@@ -52,7 +52,7 @@ DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 
 all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb
 	
-$(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES):
+$(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	@echo 
 	@echo
 	@echo Building opnfv-quagga $(VERSION) Ubuntu Pkg
