@@ -9,16 +9,12 @@ Git.
 In addition to Quagga, this package will add the Thrift Interface
 to integrate Quagga into OPNFV
 
-To build the package, the following Ubuntu package need to be installed:
+To install all the required build essentials, run:
 
-    apt-get install git autoconf automake libtool make gawk libreadline-dev \
-        texinfo dejagnu build-essential fakeroot devscripts equivs lintian \
-        dpatch quilt libncurses5-dev texlive-latex-base libcap-dev \
-        texlive-generic-recommended imagemagick ghostscript groff \
-        hardening-wrapper libpcre3-dev chrpath libpam0g-dev \
-        python2.7 python2.7-dev pkg-config libzmq3-dev \
-        python-pip python-zmq cython git-buildpackage python-all \
-        docbook-xsl docbook-xml xsltproc dh-autoreconf
+    apt-get install `cat requirements.txt`
+
+See [requirements.txt](/requirements.txt/) for a list of required packages
+for build.
 
 After this pre-requisites are installed, build the OPNFV Version of Quagga
 with:
