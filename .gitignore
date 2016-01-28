@@ -1,4 +1,9 @@
 quaggasrc
 depend
 temp
-opnfv-quagga*
+opnfv-quagga_*.build
+opnfv-quagga_*.changes
+opnfv-quagga*.deb
+opnfv-quagga_*.debian.tar.gz
+opnfv-quagga_*.dsc
+opnfv-quagga_*.orig.tar.gz
