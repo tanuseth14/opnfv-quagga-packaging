@@ -1,0 +1,11 @@
+[Unit]
+Description=OPNFV-Quagga
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/lib/quagga/qthrift/odlvpn2bgpd.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -11,7 +11,7 @@ else
 endif
 
 %:
-	dh $@ --parallel --with autotools_dev --dbg-package=opnfv-quagga-dbg --list-missing
+	dh $@ --parallel --with autotools_dev,systemd --dbg-package=opnfv-quagga-dbg --list-missing
 
 override_dh_auto_clean:
 	dh_auto_clean
@@ -59,13 +59,6 @@ override_dh_auto_configure:
 		--with-zeromq \
 		--with-pkg-extra-version=-OPNFV-%_VERSION_%-%_RELEASE_%
 	
-	if ! diff -b -IHAVE_SNMP -IHAVE_NETSNMP -IUCD_COMPAT -IGETIFADDR debian/my/config.h.reference config.h; then \
-		echo; \
-		echo "WARNING: Please compare with debian/my/config.h.reference"; \
-		echo; \
-		if [ "`hostname`" = "james" ]; then exit 1; fi; \
-	fi
-
 override_dh_auto_build:
 	dh_auto_build
 	
@@ -104,6 +97,9 @@ override_dh_auto_install:
 	
 	# cleaning .la files
 	sed -i "/dependency_libs/ s/'.*'/''/" debian/tmp/usr/lib/*.la
+
+override_dh_systemd_enable:
+	dh_systemd_enable -popnfv-quagga --name opnfv-quagga opnfv-quagga.service
 
 override_dh_installinit:
 	dh_installinit
