@@ -38,3 +38,5 @@ docbook-xsl
 docbook-xml
 xsltproc
 dh-autoreconf
+dh-systemd
+
