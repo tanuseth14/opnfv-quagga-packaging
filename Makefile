@@ -2,8 +2,8 @@
 ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
-QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capn-temp.git
-QUAGGAREV = 305b727
+QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capnproto.git
+QUAGGAREV = 0341828
 RELEASE = 1
 
 # URL and Revision for ODL Thrift Interface
@@ -81,7 +81,6 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	rm -rf $(DEBPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(DEBPKGBUILD_DIR)
 	cd $(DEBPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
-	cd $(DEBPKGBUILD_DIR); patch -Np1 -i ../patches/0001-Allow-to-use-capnp-0.5.99.patch
 	$(GROFF) -ms $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.ms -T ascii > $(DEBPKGBUILD_DIR)/doc/draft-zebra-00.txt
 	cd $(DEBPKGBUILD_DIR); ./bootstrap.sh
 	git clone $(QTHRIFTGIT) $(DEBPKGBUILD_DIR)/qthrift
