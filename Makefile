@@ -3,8 +3,8 @@ ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
 QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capnproto.git
-QUAGGAREV = 3229eb06cf3
-RELEASE = 1
+QUAGGAREV = 3229eb0
+RELEASE = 2
 
 # URL and Revision for ODL Thrift Interface
 QTHRIFTGIT = https://git.netdef.org/scm/osr/odlvpn2bgpd.git

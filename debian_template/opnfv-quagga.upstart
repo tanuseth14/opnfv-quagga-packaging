@@ -28,7 +28,14 @@ script
 	if [ -n "$local_thrift_port" ]; then
 		CMDLINE="$CMDLINE --client-port $local_thrift_port"
 	fi
+	if [ "$qthriftd_debug_log" = "yes" ]; then
+		# Enable logging
+		rm -f /tmp/qthriftd-log-fifo
+		mkfifo /tmp/qthriftd-log-fifo
+		( logger -t qthriftd </tmp/qthriftd-log-fifo & )
+		exec >/tmp/qthriftd-log-fifo
+	fi
 
-	exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $CMDLINE
+	exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $CMDLINE 2>/dev/null
 end script
 
