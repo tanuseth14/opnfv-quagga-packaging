@@ -117,9 +117,7 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	# Build the Debian Source and Binary Package
 	#  - Need to add reference to local Capnproto as we can't assume correct version
 	#    to be installed (needs 0.5.99 or higher)
-	# TEMP FIX:
-	#  - Disable DejaGNU checks as they are currently still broken
-	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar DEB_BUILD_OPTIONS=nocheck --set-envvar PKG_CONFIG_PATH=$(TEMPDIR) --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib --prepend-path $(TEMPDIR)/usr/bin -us -uc
+	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar PKG_CONFIG_PATH=$(TEMPDIR) --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib --prepend-path $(TEMPDIR)/usr/bin -us -uc
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
 
@@ -233,6 +231,7 @@ clean:
 	$(RMDIR) $(DEBPKGBUILD_DIR)
 	$(RMDIR) $(DEBPKGOUTPUT_DIR)
 	$(RMDIR) $(DEPPKGDIR)
+	$(RMDIR) $(TEMPDIR)
 	$(RM) *.deb
 	$(RM) *.orig.tar.gz
 	$(RM) *.debian.tar.gz
