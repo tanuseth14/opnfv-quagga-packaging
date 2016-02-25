@@ -9,6 +9,7 @@ respawn limit 10 5
 
 pre-start script
 	test -f /etc/quagga/qthriftd.conf || { stop; exit 0; }
+	/usr/bin/install -m 755 -o quagga -g quagga -d /var/run/quagga
 end script
 
 script	
