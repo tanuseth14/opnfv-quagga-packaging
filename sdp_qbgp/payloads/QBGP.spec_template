@@ -1,0 +1,54 @@
+Name:         qbgp
+License:      GPL
+Group:        Applications
+Requires:     bash
+Autoreq:	no
+
+Version:      Rbuildno
+Release:      revision
+Summary:      QBGP service.
+URL:          http://ericsson.com
+#Source:       %{name}-%{version}.tar.bz2
+#Patch1:       %{name}.destdir.patch
+
+Vendor:       Ericsson AB
+
+%description
+#This package installs QBGP component in the following directories.
+
+%install
+export QBGPDIR=/opt/sdnc/qbgp
+#export PATH=$QBGPDIR/qbgpdep/python2.7.8/bin:$PATH
+#export LD_LIBRARY_PATH=$QBGPDIR/qbgpdep/python2.7.8/lib:$LD_LIBRARY_PATH
+install -m 755  -d $RPM_BUILD_ROOT/opt/sdnc/qbgp
+install -m 755  %{_sourcedir}/qbgpLauncherScript       $RPM_BUILD_ROOT/opt/sdnc/qbgp/qbgpLauncherScript
+#install -m 755  %{_sourcedir}/qbgpLauncherExe         $RPM_BUILD_ROOT/opt/sdnc/qbgp/qbgpLauncherExe
+#install -m 755  %{_sourcedir}/qbgp_start.sh           $RPM_BUILD_ROOT/opt/sdnc/qbgp/qbgp_start.sh
+install -m 755  %{_sourcedir}/qbgp_uninstall.sh        $RPM_BUILD_ROOT/opt/sdnc/qbgp/qbgp_uninstall.sh
+install -m 755  %{_sourcedir}/install_imm_model.sh     $RPM_BUILD_ROOT/opt/sdnc/qbgp/install_imm_model.sh
+install -m 755  %{_sourcedir}/uninstall_imm_model.sh   $RPM_BUILD_ROOT/opt/sdnc/qbgp/uninstall_imm_model.sh
+install -m 755  %{_sourcedir}/qbgp.conf              $RPM_BUILD_ROOT/opt/sdnc/qbgp/qbgp.conf
+####QBGP stuff##############
+install -m 755  %{_sourcedir}/qbgpdir/bgp_quagga 	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/bgp_quagga
+install -m 755  %{_sourcedir}/qbgpdir/bgp_thrift 	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/bgp_thrift
+install -m 755  %{_sourcedir}/qbgpdir/bgp_odl 	    	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/bgp_odl
+install -m 755  %{_sourcedir}/qbgpdir/libqbgp.so.0 	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/libqbgp.so.0
+install -m 755  %{_sourcedir}/qbgpdir/libthrift-0.9.1.so    $RPM_BUILD_ROOT/opt/sdnc/qbgp/libthrift-0.9.1.so
+install -m 755  %{_sourcedir}/qbgpdir/libthrift_bgp.so 	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/libthrift_bgp.so
+install -m 755  %{_sourcedir}/qbgpdir/libzebra.so.0 	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/libzebra.so.0
+install -m 755  %{_sourcedir}/qbgpdir/vtysh 		    $RPM_BUILD_ROOT/opt/sdnc/qbgp/
+install -m 755  %{_sourcedir}/qbgpdir/libreadline.so	    $RPM_BUILD_ROOT/opt/sdnc/qbgp/
+install -m 755  %{_sourcedir}/qbgpdir/qbgp		    $RPM_BUILD_ROOT/opt/sdnc/qbgp/
+install -m 755  %{_sourcedir}/qbgpdir/qbgp.py		    $RPM_BUILD_ROOT/opt/sdnc/qbgp/
+install -m 755  %{_sourcedir}/qbgpdir/pqbgp.so		    $RPM_BUILD_ROOT/opt/sdnc/qbgp/
+
+%post
+export QBGPDIR=/opt/sdnc/qbgp
+
+%files
+%defattr(-,root,root)
+%attr(755,root,root) /opt/sdnc/qbgp/
+
+%changelog
+* Fri Mar 18 2015 echiapt
+- Created
