@@ -1,0 +1,43 @@
+#!/bin/sh
+
+echo "`date`: $0 $*"
+
+CMD=$1
+
+PIDFILE="/var/run/${SA_AMF_COMPONENT_NAME}".pid
+
+cleanup()
+{
+	ps -ef | grep "bgp_quagga" | awk '{print $2}' | xargs kill -9 2&>/dev/null
+	ps -ef | grep "bgp_thrift" | awk '{print $2}' | xargs kill -9 2&>/dev/null
+}
+
+instantiate()
+{
+	echo "Instantiation started"
+       	cleanup
+	cd /opt/sdnc/qbgp
+	export LD_LIBRARY_PATH=/opt/sdnc/qbgp
+	i=`grep 'use_thrift=true' qbgp.conf |wc -l`
+	if [ $i -eq '1' ] ; then
+		./bgp_thrift &
+	else
+		./bgp_quagga &
+	fi
+       	echo $! > $PIDFILE
+}
+
+case "$CMD" in
+        instantiate)
+                instantiate $*
+                ;;
+        cleanup)
+                cleanup $*
+                ;;
+        *)
+                echo "Usage: $0 {instantiate|cleanup}"
+                exit 1
+esac
+
+exit 0
+
