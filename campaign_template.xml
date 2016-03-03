@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="ASCII"?>
+  <upgradeCampaign safSmfCampaign="safSmfCampaign=ERIC-QBGP-RU_Camp_Rbuildno">
+    <campaignInfo>
+      <campaignPeriod/>
+    </campaignInfo>
+    <campaignInitialization>
+      <addToImm>
+        <amfEntityTypes>
+          <CompBaseType safCompType="safCompType=ERIC-QBGP-Control">
+            <CompType safVersion="safVersion=Rbuildno">
+              <providesCSType saAmfCtCompCapability="3" saAmfCtDefNumMaxActiveCsi="1" safSupportedCsType="safSupportedCsType=safVersion=Rlast_sprint_buildno\,safCSType=ERIC-QBGP-Control"/>
+
+
+              <compTypeDefaults saAmfCtCompCategory="1" saAmfCtDefCallbackTimeout="10000000000" saAmfCtDefClcCliTimeout="10000000000" saAmfCtDefDisableRestart="0" saAmfCtDefInstantiationLevel="0" saAmfCtDefQuiescingCompleteTimeout="10000000000" saAmfCtDefRecoveryOnError="2"/>
+
+
+
+
+              <instantiateCmd saAmfCtRelPathInstantiateCmd="sdnc/qbgp/qbgpLauncherScript">
+                <cmdArgv>instantiate</cmdArgv>
+              </instantiateCmd>
+              <cleanupCmd saAmfCtRelPathCleanupCmd="sdnc/qbgp/qbgpLauncherScript">
+                <cmdArgv>cleanup</cmdArgv>
+              </cleanupCmd>
+              <healthCheck saAmfHealthcheckMaxDuration="1800000000" saAmfHealthcheckPeriod="2400000000" safHealthcheckKey="safHealthcheckKey=AmfQBgp"/>
+
+              <swBundle saAmfCtSwBundle="safSmfBundle=ERIC-QBGP-CXP9027631_4-Rbuildno"/>
+            </CompType>
+          </CompBaseType>
+        </amfEntityTypes>
+      </addToImm>
+      <campInitAction>
+        <immCCB ccbFlags="0">
+          <create objectClassName="SaAmfNodeGroup" parentObjectDN="safAmfCluster=myAmfCluster">
+            <attribute name="safAmfNodeGroup" type="SA_IMM_ATTR_SASTRINGT">
+              <value>safAmfNodeGroup=ERIC-QBGP-CXP9027631_4-Rbuildno</value>
+            </attribute>
+            <attribute name="saAmfNGNodeList" type="SA_IMM_ATTR_SANAMET">
+              <value>safAmfNode=PL-3,safAmfCluster=myAmfCluster</value>
+              <value>safAmfNode=PL-4,safAmfCluster=myAmfCluster</value>
+            </attribute>
+          </create>
+        </immCCB>
+      </campInitAction>
+    </campaignInitialization>
+    <upgradeProcedure safSmfProcedure="safSmfProc=RollingUpgrade" saSmfExecLevel="1">
+      <outageInfo>
+        <acceptableServiceOutage>
+          <all/>
+        </acceptableServiceOutage>
+        <procedurePeriod saSmfProcPeriod="60000000000"/>
+      </outageInfo>
+      <procInitAction>
+        <immCCB ccbFlags="0">
+          <create objectClassName="SaAmfSutCompType" parentObjectDN="safVersion=Rlast_sprint_buildno,safSuType=ERIC-QBGP-Control">
+            <attribute name="safMemberCompType" type="SA_IMM_ATTR_SANAMET">
+              <value>safMemberCompType=safVersion=Rbuildno\,safCompType=ERIC-QBGP-Control</value>
+            </attribute>
+            <attribute name="saAmfSutMinNumComponents" type="SA_IMM_ATTR_SAUINT32T">
+              <value>0</value>
+            </attribute>
+          </create>
+        </immCCB>
+      </procInitAction>
+      <upgradeMethod>
+        <rollingUpgrade>
+          <upgradeScope>
+            <byTemplate>
+              <targetNodeTemplate objectDN="safAmfNodeGroup=ERIC-QBGP-CXP9027631_4-Rbuildno,safAmfCluster=myAmfCluster">
+
+
+                <activationUnitTemplate>
+                  <type objectDN="safVersion=Rlast_sprint_buildno,safSuType=ERIC-QBGP-Control"/>
+                </activationUnitTemplate>
+                <swRemove bundleDN="safSmfBundle=ERIC-QBGP-CXP9027631_4-Rlast_sprint_buildno"/>
+                <swAdd bundleDN="safSmfBundle=ERIC-QBGP-CXP9027631_4-Rbuildno" pathnamePrefix="/opt"/>
+
+
+              </targetNodeTemplate>
+              <targetEntityTemplate>
+                <type objectDN="safVersion=Rlast_sprint_buildno,safCompType=ERIC-QBGP-Control"/>
+                <modifyOperation operation="SA_IMM_ATTR_VALUES_REPLACE">
+                  <attribute name="saAmfCompType" type="SA_IMM_ATTR_SANAMET">
+                    <value>safVersion=Rbuildno,safCompType=ERIC-QBGP-Control</value>
+                  </attribute>
+                </modifyOperation>
+              </targetEntityTemplate>
+
+
+            </byTemplate>
+          </upgradeScope>
+
+          <upgradeStep saSmfStepMaxRetry="8" saSmfStepRestartOption="1"/>
+        </rollingUpgrade>
+      </upgradeMethod>
+
+      <procWrapupAction>
+        <immCCB ccbFlags="0">
+          <delete objectDN="safMemberCompType=safVersion=Rlast_sprint_buildno\,safCompType=ERIC-QBGP-Control,safVersion=Rlast_sprint_buildno,safSuType=ERIC-QBGP-Control"/>
+
+        </immCCB>
+      </procWrapupAction>
+    </upgradeProcedure>
+    <campaignWrapup>
+      <waitToCommit/>
+
+      <campWrapupAction>
+        <immCCB ccbFlags="0">
+          <delete objectDN="safAmfNodeGroup=ERIC-QBGP-CXP9027631_4-Rbuildno,safAmfCluster=myAmfCluster"/>
+        </immCCB>
+      </campWrapupAction>
+      <waitToAllowNewCampaign/>
+      <removeFromImm>
+        <amfEntityTypeDN objectDN="safSupportedCsType=safVersion=Rlast_sprint_buildno\,safCSType=ERIC-QBGP-Control,safVersion=Rlast_sprint_buildno,safCompType=ERIC-QBGP-Control"/>
+
+        <amfEntityTypeDN objectDN="safHealthcheckKey=AmfQBgp,safVersion=Rlast_sprint_buildno,safCompType=ERIC-QBGP-Control"/>
+
+        <amfEntityTypeDN objectDN="safVersion=Rlast_sprint_buildno,safCompType=ERIC-QBGP-Control"/>
+      </removeFromImm>
+    </campaignWrapup>
+  </upgradeCampaign>
