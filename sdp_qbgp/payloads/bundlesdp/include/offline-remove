@@ -1,0 +1,47 @@
+#! /bin/sh
+##
+## Copyright (c) Ericsson AB, 2011.
+##
+## All Rights Reserved. Reproduction in whole or in part is prohibited
+## without the written consent of the copyright owner.
+##
+## ERICSSON MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE
+## SUITABILITY OF THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING
+## BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+## FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. ERICSSON
+## SHALL NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE AS A
+## RESULT OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
+## DERIVATIVES.
+##
+##
+## @reviewed lmcdaen 2011-07-04
+
+HOST=`hostname`
+
+die () {
+  echo "ERROR: $@"
+  exit 1
+}
+
+remove_rpms () {
+
+   # change the working directory to the current script
+   cd $(dirname $0)
+
+   for rpm in `ls ../rpms/*.rpm 2>/dev/null`
+   do
+         rpm_info=`rpm -qpl $rpm`
+         for item in `cmw-rpm-list $HOST`
+         do
+                item_info=`rpm -ql $item`
+                if [[ "$rpm_info" == "$item_info" ]]
+                then
+                    cmw-rpm-config-delete $item || die "Failed to remove $item"
+                fi
+         done
+   done
+
+   cd -
+}
+
+remove_rpms
