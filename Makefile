@@ -3,12 +3,12 @@ ARCH=$(shell arch)
 
 # URL and Revision for Quagga to checkout
 QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capnproto.git
-QUAGGAREV = 4e25a2e
-RELEASE = 3
+QUAGGAREV = 5ef1cc6
+RELEASE = 4
 
 # URL and Revision for ODL Thrift Interface
 QTHRIFTGIT = https://git.netdef.org/scm/osr/odlvpn2bgpd.git
-QTHRIFTREV = bf70b5d
+QTHRIFTREV = 9ad9d64
 
 # URL for Python Thrift Library
 THRIFTPYGIT = https://git.netdef.org/scm/osr/thriftpy.git
