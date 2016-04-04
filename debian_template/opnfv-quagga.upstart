@@ -30,6 +30,8 @@ script
 		CMDLINE="$CMDLINE --client-port $local_thrift_port"
 	fi
 	if [ "$qthriftd_debug_log" = "yes" ]; then
+		# Use bgp template config with debug options
+		CMDLINE="$CMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
 		# Enable logging
 		rm -f /tmp/qthriftd-log-fifo
 		mkfifo /tmp/qthriftd-log-fifo
