@@ -4,11 +4,11 @@ ARCH=$(shell arch)
 # URL and Revision for Quagga to checkout
 QUAGGAGIT = https://git.netdef.org/scm/osr/quagga-capnproto.git
 QUAGGAREV = 8402a46
-RELEASE = 5
+RELEASE = 6
 
 # URL and Revision for ODL Thrift Interface
 QTHRIFTGIT = https://git.netdef.org/scm/osr/odlvpn2bgpd.git
-QTHRIFTREV = c4e0137
+QTHRIFTREV = ef6433d
 
 # URL for Python Thrift Library
 THRIFTPYGIT = https://git.netdef.org/scm/osr/thriftpy.git
@@ -39,9 +39,7 @@ GBP = /usr/bin/gbp
 VERSION = 0.99.24.99
 SOURCEURL = http://www.quagga.net/
 # We try to get username and hostname from system, but could be manually set if preferred
-#DEBPKGUSER = Nobody
-#DEBPKGEMAIL = <nobody@example.com>
-DEBPKGUSER = $(shell getent passwd $LOGNAME | cut -d: -f5 | cut -d, -f1)
+DEBPKGUSER = OPNFV Pkg Builder
 DEBPKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
 
 DEBPKGBUILD_DIR = quaggasrc
