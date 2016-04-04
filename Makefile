@@ -83,7 +83,6 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	cd $(DEBPKGBUILD_DIR); ./bootstrap.sh
 	git clone $(QTHRIFTGIT) $(DEBPKGBUILD_DIR)/qthrift
 	cd $(DEBPKGBUILD_DIR)/qthrift; git checkout $(QTHRIFTREV)
-	cd $(DEBPKGBUILD_DIR)/qthrift; $(PATCH) -p1 < ../../patches/10-qthrift-bgpd_location.patch	
 	# Pack Up Source
 	tar --exclude=".*" -czf opnfv-quagga_$(VERSION).orig.tar.gz $(DEBPKGBUILD_DIR)
 
