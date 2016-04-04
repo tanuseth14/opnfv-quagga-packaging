@@ -9,4 +9,8 @@ if [ "$1" = "purge" ]; then
   	userdel quagga >/dev/null 2>&1 || true
 fi
 
+if [ "$1" = purge ]; then
+	update-rc.d opnfv-quagga remove
+fi
+
 #DEBHELPER#
