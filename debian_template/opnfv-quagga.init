@@ -18,12 +18,18 @@
 RETVAL=0
 PROG="opnfv-quagga"
 OPNFVDIR=/usr/lib/quagga
-EXECUTABLE=$OPNFVDIR/qthrift/odlvpn2bgpd.py
-CONF_FILE=/etc/quagga/qthriftd.conf
-PIDFILE=/var/run/opnfv-quagga.pid
+EXECUTABLE=$OPNFVDIR/qthrift/opnfv-quagga.sh
+PIDFILE=/var/run/quagga/opnfv-quagga.pid
+
+check_for_upstart() {
+    if init_is_upstart; then
+	exit $1
+    fi
+}
 
 case "$1" in
     start)
+	check_for_upstart 1
         # Check that networking is up.
         [ "${NETWORKING}" = "no" ] && exit 1
 
@@ -33,37 +39,15 @@ case "$1" in
             echo $"Insufficient privilege" 1>&2
             exit 4
         fi
-        . $CONF_FILE
-        CMDLINE=''
-        if [ -n "$odl_controller_IP" ]; then
-            CMDLINE="$CMDLINE --server-addr $odl_controller_IP"
-        fi
-        if [ -n "$odl_controller_thrift_port" ]; then
-            CMDLINE="$CMDLINE --server-port $odl_controller_thrift_port"
-        fi
-        if [ -n "$local_thrift_IP" ]; then
-            CMDLINE="$CMDLINE --client-addr $local_thrift_IP"
-        fi
-        if [ -n "$local_thrift_port" ]; then
-            CMDLINE="$CMDLINE --client-port $local_thrift_port"
-        fi
-        if [ "$qthriftd_debug_log" = "yes" ]; then
-            # Use bgp template config with debug options
-            CMDLINE="$CMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
-            # Enable logging
-            rm -f /tmp/qthriftd-log-fifo
-            mkfifo /tmp/qthriftd-log-fifo
-            ( logger -t qthriftd </tmp/qthriftd-log-fifo & )
-            exec >/tmp/qthriftd-log-fifo
-        fi
         log_daemon_msg "Starting OPNFV-Quagga" "opnfv-quagga" || true
-        if start-stop-daemon --start --background -m --pidfile $PIDFILE --exec $EXECUTABLE -- $CMDLINE; then
+        if start-stop-daemon --start --background --pidfile $PIDFILE --exec $EXECUTABLE; then
             log_end_msg 0 || true
         else
             log_end_msg 1 || true
         fi
         ;;
     stop)
+	check_for_upstart 0
         log_daemon_msg "Stopping OPNFV-Quagga" "opnfv-quagga" || true
         # Deleting subprocesses first (bgpd and python subprocesses)
         if start-stop-daemon --stop --ppid `cat $PIDFILE`; then
@@ -78,11 +62,13 @@ case "$1" in
         fi
         ;;
     restart|reload|force-reload)
+	check_for_upstart 1
         $0 stop
         $0 start
         RETVAL=$?
         ;;
     condrestart|try-restart)
+        check_for_upstart 1
         if [ -f $PIDFILE ]; then
             $0 stop
             $0 start
@@ -90,6 +76,7 @@ case "$1" in
         RETVAL=$?
         ;;
     status)
+	check_for_upstart 1
         status $cmd
         RETVAL=$?
         ;;
