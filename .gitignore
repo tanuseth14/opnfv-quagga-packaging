@@ -8,3 +8,5 @@ opnfv-quagga*.deb
 opnfv-quagga_*.debian.tar.gz
 opnfv-quagga_*.dsc
 opnfv-quagga_*.orig.tar.gz
+opnfv-quagga_*.debian.tar.xz
+
