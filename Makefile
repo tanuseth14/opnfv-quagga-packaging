@@ -62,9 +62,7 @@ TARGET := $(shell if test -s /etc/debian_version; then echo "debian"; elif ( tes
 
 all: $(TARGET)
 
-#rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
-
-rpm: $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
+rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
 
 debian: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/capnproto-deb $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/python-pycapnp-deb
 
