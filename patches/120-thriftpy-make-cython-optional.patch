@@ -1,0 +1,21 @@
+diff --git a/setup.py b/setup.py
+index bec846d..a72c957 100644
+--- a/setup.py
++++ b/setup.py
+@@ -46,12 +46,11 @@ PYPY = "__pypy__" in sys.modules
+ UNIX = platform.system() in ("Linux", "Darwin")
+ 
+ # only build ext in CPython with UNIX platform
+-if UNIX and not PYPY:
++if CYTHON and UNIX and not PYPY:
+     # rebuild .c files if cython available
+-    if CYTHON:
+-        cythonize("thriftpy/transport/cybase.pyx")
+-        cythonize("thriftpy/transport/**/*.pyx")
+-        cythonize("thriftpy/protocol/cybin/cybin.pyx")
++    cythonize("thriftpy/transport/cybase.pyx")
++    cythonize("thriftpy/transport/**/*.pyx")
++    cythonize("thriftpy/protocol/cybin/cybin.pyx")
+ 
+     ext_modules.append(Extension("thriftpy.transport.cybase",
+                                  ["thriftpy/transport/cybase.c"]))

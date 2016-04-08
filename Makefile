@@ -62,7 +62,9 @@ TARGET := $(shell if test -s /etc/debian_version; then echo "debian"; elif ( tes
 
 all: $(TARGET)
 
-rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
+#rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
+
+rpm: $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
 
 debian: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/capnproto-deb $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/python-pycapnp-deb
 
@@ -163,9 +165,9 @@ $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES): $(DEPPKGDIR)/capnproto-rpm
 	rm -rf $(RPMPKGBUILD_DIR) 
 	git clone $(QUAGGAGIT) $(RPMPKGBUILD_DIR)
 	cd $(RPMPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
-	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/10-configure.ac-force_gnu99.patch
-	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/20-configure.ac-remove_silent_rule.patch
-	cd $(RPMPKGBUILD_DIR)/lib/c-capnproto; $(PATCH) -p1 < $(THISDIR)/patches/30-c-capnproto-cpp-std-hdr.patch
+	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/010-configure.ac-force_gnu99.patch
+	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/020-configure.ac-remove_silent_rule.patch
+	cd $(RPMPKGBUILD_DIR)/lib/c-capnproto; $(PATCH) -p1 < $(THISDIR)/patches/030-c-capnproto-cpp-std-hdr.patch
 
 	$(SED) -i 's/AC_INIT(Quagga, 0.99.25-dev/AC_INIT(OPNFV-Quagga, $(VERSION)-$(RELEASE)/' $(RPMPKGBUILD_DIR)/configure.ac
 	$(GROFF) -ms $(RPMPKGBUILD_DIR)/doc/draft-zebra-00.ms -T ascii > $(RPMPKGBUILD_DIR)/doc/draft-zebra-00.txt
@@ -267,7 +269,7 @@ $(DEPPKGDIR)/capnproto-rpm:
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/*.rpm $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/*$(ARCH)*.rpm $(RPMPKGOUTPUT_DIR)
 	#
 	# Create dummy flag file with filename for Makefile logic
 	cd $(RPMPKGOUTPUT_DIR); ls capnproto*.rpm > $(DEPPKGDIR)/capnproto-rpm 2> /dev/null
@@ -315,11 +317,13 @@ $(DEPPKGDIR)/python-thriftpy-rpm:
 	#
 	# Build debian package
 	git clone $(THRIFTPYGIT) $(DEPPKGDIR)/thriftpy
+	cd $(DEPPKGDIR)/thriftpy; $(PATCH) < $(THISDIR)/patches/110-thriftpy-disable-cython.patch
+	cd $(DEPPKGDIR)/thriftpy; $(PATCH) < $(THISDIR)/patches/120-thriftpy-make-cython-optional.patch
 	cd $(DEPPKGDIR)/thriftpy; python setup.py bdist --formats=rpm
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR) 
-	$(COPY) $(DEPPKGDIR)/thriftpy/dist/thriftpy*`arch`.rpm  $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/thriftpy/dist/thriftpy*{noarch,$(ARCH)}*.rpm  $(RPMPKGOUTPUT_DIR) | true
 	# 
 	# Create dummy flag file with filename for Makefile logic
 	cd $(RPMPKGOUTPUT_DIR); ls thriftpy*.rpm > $(DEPPKGDIR)/python-thriftpy-rpm 2> /dev/null
@@ -406,15 +410,16 @@ $(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
 	#
 	# Build RPM package
 	git clone $(PYCAPNPGIT) $(DEPPKGDIR)/pycapnp
+	cd $(DEPPKGDIR)/pycapnp;$(PATCH) < $(THISDIR)/patches/210-pycapnp-MANIFEST-add-all-dirs.patch
 	# add local paths for building
-	cd $(DEPPKGDIR)/pycapnp; CPATH=$(TEMPDIR)/usr/include \
-	LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
-	LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
+	cd $(DEPPKGDIR)/pycapnp; CPATH=/usr/include:$(TEMPDIR)/usr/include \
+	LIBRARY_PATH=/usr/lib:/usr/lib64:$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
+	LD_LIBRARY_PATH=/usr/lib:/usr/lib64:$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
 	python setup.py bdist --formats=rpm
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*`arch`.rpm  $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*rpm_package/*{noarch,$(ARCH)}*.rpm $(RPMPKGOUTPUT_DIR) | true
 	# 
 	# Create dummy flag file with filename for Makefile logic
 	cd $(RPMPKGOUTPUT_DIR); ls pycapnp*.rpm > $(DEPPKGDIR)/python-pycapnp-rpm 2> /dev/null
