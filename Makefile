@@ -31,6 +31,7 @@ DEPPKGDIR = $(THISDIR)/depend
 TEMPDIR = $(THISDIR)/temp
 INSTALL = /usr/bin/install
 DEBUILD = /usr/bin/debuild
+RPMBUILD = /usr/bin/rpmbuild
 GROFF = /usr/bin/groff
 PATCH = /usr/bin/patch
 GBP = /usr/bin/gbp
@@ -39,24 +40,39 @@ GBP = /usr/bin/gbp
 VERSION = 0.99.24.99
 SOURCEURL = http://www.quagga.net/
 # We try to get username and hostname from system, but could be manually set if preferred
-DEBPKGUSER = OPNFV Pkg Builder
-DEBPKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
+PKGUSER = OPNFV Pkg Builder
+PKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
 
 DEBPKGBUILD_DIR = quaggasrc
 # The output dir for the packages needed to install
-DEBPKGOUTPUT_DIR = debian_package
+DEBPKGOUTPUT_DIR = $(THISDIR)/debian_package
 DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
+
+RPMPKGBUILD_DIR = quaggasrc-rpm
+# The output dir for the packages needed to install
+RPMPKGOUTPUT_DIR = $(THISDIR)/rpm_package
+RPM_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_$(shell uname -m).rpm
 
 # Build Date
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
+RPMDATE := $(shell date -u +"%a %b %d %Y")
 
+# Finding correct target based on distribution
+TARGET := $(shell if test -s /etc/debian_version; then echo "debian"; elif ( test -s /etc/redhat-release ) || ( test -s /etc/SuSE-release ); then echo "rpm"; else echo "unknown";  fi)
 
-all: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/capnproto-deb $(DEPPKGDIR)/python-pycapnp-deb
-	
+all: $(TARGET)
+
+rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
+
+debian: $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES) $(DEPPKGDIR)/capnproto-deb $(DEPPKGDIR)/python-thriftpy-deb $(DEPPKGDIR)/python-pycapnp-deb
+
+unknown:
+	$(error Unknown OS - only supporting Debian or RPM based systems)
+
 $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	@echo 
 	@echo
-	@echo Building opnfv-quagga $(VERSION) Ubuntu Pkg
+	@echo Building opnfv-quagga $(VERSION) Debian Pkg
 	@echo    Using Quagga from $(QUAGGAGIT)
 	@echo    opnfv-quagga $(VERSION)-$(RELEASE), Git Rev $(QUAGGAREV)
 	@echo -------------------------------------------------------------------------
@@ -97,8 +113,8 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	$(SED) -i 's/%_RELEASE_%/$(RELEASE)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's|%_SOURCEURL_%|$(SOURCEURL)|g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's/%_DATE_%/$(DATE)/g' $(DEBPKGBUILD_DIR)/debian/changelog
-	$(SED) -i 's/%_USER_%/$(DEBPKGUSER)/g' $(DEBPKGBUILD_DIR)/debian/changelog
-	$(SED) -i 's/%_EMAIL_%/$(DEBPKGEMAIL)/g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's/%_USER_%/$(PKGUSER)/g' $(DEBPKGBUILD_DIR)/debian/changelog
+	$(SED) -i 's/%_EMAIL_%/$(PKGEMAIL)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(DEBPKGBUILD_DIR)/debian/changelog
 	$(SED) -i 's|%_QTHRIFTGIT_%|$(QTHRIFTGIT)|g' $(DEBPKGBUILD_DIR)/debian/changelog
@@ -118,10 +134,87 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
 	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
 
+
+$(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES): $(DEPPKGDIR)/capnproto-rpm
+	@echo 
+	@echo
+	@echo Building opnfv-quagga $(VERSION) RPM Pkg
+	@echo    Using Quagga from $(QUAGGAGIT)
+	@echo    opnfv-quagga $(VERSION)-$(RELEASE), Git Rev $(QUAGGAREV)
+	@echo -------------------------------------------------------------------------
+	@echo
+	
+	# Hack: We don't have capnproto installed yet (needs priv to install and we
+	#       just built it. So we unpack library to temp directory and add it to paths
+	#       from temp directory
+	#
+	rm -rf $(TEMPDIR)
+	$(MKDIR) $(TEMPDIR)
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
+	# Build capnp pkg_config temp config
+	$(COPY) $(TEMPDIR)/usr/lib*/pkgconfig/*.pc $(TEMPDIR)/
+	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
+	$(SED) -i 's|dir=/usr|dir=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
+	
+	# Checkout and patch (if needed) the Capnproto Quagga Version and Thrift Interface
+	#
+	rm -rf $(RPMPKGBUILD_DIR) 
+	git clone $(QUAGGAGIT) $(RPMPKGBUILD_DIR)
+	cd $(RPMPKGBUILD_DIR); git checkout $(QUAGGAREV); git submodule init && git submodule update
+	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/10-configure.ac-force_gnu99.patch
+	cd $(RPMPKGBUILD_DIR); $(PATCH) < $(THISDIR)/patches/20-configure.ac-remove_silent_rule.patch
+	cd $(RPMPKGBUILD_DIR)/lib/c-capnproto; $(PATCH) -p1 < $(THISDIR)/patches/30-c-capnproto-cpp-std-hdr.patch
+
+	$(SED) -i 's/AC_INIT(Quagga, 0.99.25-dev/AC_INIT(OPNFV-Quagga, $(VERSION)-$(RELEASE)/' $(RPMPKGBUILD_DIR)/configure.ac
+	$(GROFF) -ms $(RPMPKGBUILD_DIR)/doc/draft-zebra-00.ms -T ascii > $(RPMPKGBUILD_DIR)/doc/draft-zebra-00.txt
+	cd $(RPMPKGBUILD_DIR); ./bootstrap.sh
+	git clone $(QTHRIFTGIT) $(RPMPKGBUILD_DIR)/qthrift
+	cd $(RPMPKGBUILD_DIR)/qthrift; git checkout $(QTHRIFTREV)
+	# Pack Up Source
+	tar --exclude=".*" -czf opnfv-quagga_$(VERSION)-$(RELEASE).orig.tar.gz $(RPMPKGBUILD_DIR)
+
+	##cd $(RPMPKGBUILD_DIR); export PKG_CONFIG_PATH=$(TEMPDIR); \
+	##    LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib; PATH=$(TEMPDIR)/usr/bin:$$PATH; \
+	##	./configure
+	##cd $(RPMPKGBUILD_DIR); PATH=$(TEMPDIR)/usr/bin:$$PATH; \
+	##	export LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64; make dist
+	## tar --exclude=".*" -czf opnfv-quagga_$(VERSION)-$(RELEASE).orig.tar.gz $(RPMPKGBUILD_DIR)
+
+	# Building rpmbuild structure
+	rm -rf $(RPMPKGBUILD_DIR)/rpmbuild
+	$(INSTALL) -d $(RPMPKGBUILD_DIR)/rpmbuild/{SPECS,SOURCES,SRPMS,BUILD,RPMS/$(ARCH)}
+	$(COPY) rpm_template/opnfv-quagga.spec $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/
+	$(COPY) rpm_template/opnfv-quagga-sources/* $(RPMPKGBUILD_DIR)/rpmbuild/SOURCES/
+	mv opnfv-quagga_$(VERSION)-$(RELEASE).orig.tar.gz $(RPMPKGBUILD_DIR)/rpmbuild/SOURCES
+	#
+	# Fix up the rpmbuild package SPEC
+	$(SED) -i 's/%_VERSION_%/$(VERSION)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_RELEASE_%/$(RELEASE)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's|%_SOURCEURL_%|$(SOURCEURL)|g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_DATE_%/$(RPMDATE)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_USER_%/$(PKGUSER)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_EMAIL_%/$(PKGEMAIL)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's|%_QUAGGAGIT_%|$(QUAGGAGIT)|g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_QUAGGAREV_%/$(QUAGGAREV)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's|%_QTHRIFTGIT_%|$(QTHRIFTGIT)|g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec
+	$(SED) -i 's/%_QTHRIFTREV_%/$(QTHRIFTREV)/g' $(RPMPKGBUILD_DIR)/rpmbuild/SPECS/opnfv-quagga.spec 
+	#
+	# Build the RPM Source and Binary Package
+	#  - Need to add reference to local Capnproto as we can't assume correct version
+	#    to be installed (needs 0.5.99 or higher)
+	cd $(RPMPKGBUILD_DIR); PKG_CONFIG_PATH=$(TEMPDIR) PATH=$(TEMPDIR)/usr/bin:$$PATH \
+		LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 CC=gcc \
+		rpmbuild --define "_topdir `pwd`/rpmbuild" -ba rpmbuild/SPECS/opnfv-quagga.spec 
+	#
+	$(MKDIR) $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*.rpm $(RPMPKGOUTPUT_DIR)
+
 $(DEPPKGDIR)/capnproto-deb:
 	@echo 
 	@echo
-	@echo Building capnproto Ubuntu Pkg 0.5.99
+	@echo Building capnproto Debian Pkg 0.5.99
 	@echo    Using capnproto from $(CAPNPROTOGIT)
 	@echo -------------------------------------------------------------------------
 	@echo
@@ -144,14 +237,47 @@ $(DEPPKGDIR)/capnproto-deb:
 	$(COPY) $(DEPPKGDIR)/capnproto/libcapnp*.deb $(DEBPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd debian_package; ls capnproto*.deb > $(DEPPKGDIR)/capnproto-deb 2> /dev/null
-	cd debian_package; ls libcapnp-[0-9]*.deb > $(DEPPKGDIR)/libcapnp-deb 2> /dev/null
-	cd debian_package; ls libcapnp-dev*.deb > $(DEPPKGDIR)/libcapnp-dev-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls capnproto*.deb > $(DEPPKGDIR)/capnproto-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls libcapnp-[0-9]*.deb > $(DEPPKGDIR)/libcapnp-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls libcapnp-dev*.deb > $(DEPPKGDIR)/libcapnp-dev-deb 2> /dev/null
+
+$(DEPPKGDIR)/capnproto-rpm:
+	@echo
+	@echo
+	@echo Building capnproto RPM Pkg 0.5.99
+	@echo    Using capnproto from $(CAPNPROTOGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/capnproto*
+	rm -rf $(DEPPKGDIR)/libcapnp*
+	rm -rf $(RPMPKGOUTPUT_DIR)/capnproto*
+	rm -rf $(RPMPKGOUTPUT_DIR)/libcapnp*
+	#
+	# Build RPM package
+	git clone $(CAPNPROTOGIT) $(DEPPKGDIR)/capnproto
+	cd $(DEPPKGDIR)/capnproto/c++; autoreconf -i
+	cd $(DEPPKGDIR)/capnproto; tar czf capnproto_0.5.99.orig.tar.gz c++
+	cd $(DEPPKGDIR)/capnproto; $(INSTALL) -d rpmbuild/{SPECS,SOURCES,SRPMS,BUILD,RPMS/$(ARCH)}
+	cd $(DEPPKGDIR)/capnproto; mv capnproto_0.5.99.orig.tar.gz rpmbuild/SOURCES/
+	cd $(DEPPKGDIR)/capnproto; cp $(THISDIR)/rpm_template/capnproto.spec rpmbuild/SPECS/
+	$(RPMBUILD) --define "_topdir $(DEPPKGDIR)/capnproto/rpmbuild" -ba $(DEPPKGDIR)/capnproto/rpmbuild/SPECS/capnproto.spec
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/*.rpm $(RPMPKGOUTPUT_DIR)
+	#
+	# Create dummy flag file with filename for Makefile logic
+	cd $(RPMPKGOUTPUT_DIR); ls capnproto*.rpm > $(DEPPKGDIR)/capnproto-rpm 2> /dev/null
+	cd $(RPMPKGOUTPUT_DIR); ls libcapnp-[0-9]*.rpm > $(DEPPKGDIR)/libcapnp-rpm 2> /dev/null
+	cd $(RPMPKGOUTPUT_DIR); ls libcapnp-dev*.rpm > $(DEPPKGDIR)/libcapnp-dev-rpm 2> /dev/null
 
 $(DEPPKGDIR)/python-thriftpy-deb:
 	@echo 
 	@echo
-	@echo Building thriftpy Ubuntu Pkg
+	@echo Building Python thriftpy Debian Pkg
 	@echo    Using thriftpy from $(THRIFTPYGIT)
 	@echo -------------------------------------------------------------------------
 	@echo
@@ -171,13 +297,38 @@ $(DEPPKGDIR)/python-thriftpy-deb:
 	$(COPY) $(DEPPKGDIR)/python-thriftpy*.deb $(DEBPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd debian_package; ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
+
+$(DEPPKGDIR)/python-thriftpy-rpm:
+	@echo 
+	@echo
+	@echo Building Python thriftpy RPM Pkg
+	@echo    Using thriftpy from $(THRIFTPYGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/thriftpy*
+	rm -rf $(DEPPKGDIR)/python-thriftpy*
+	rm -rf $(RPMPKGOUTPUT_DIR)/python-thriftpy*
+	#
+	# Build debian package
+	git clone $(THRIFTPYGIT) $(DEPPKGDIR)/thriftpy
+	cd $(DEPPKGDIR)/thriftpy; python setup.py bdist --formats=rpm
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(RPMPKGOUTPUT_DIR) 
+	$(COPY) $(DEPPKGDIR)/thriftpy/dist/thriftpy*`arch`.rpm  $(RPMPKGOUTPUT_DIR)
+	# 
+	# Create dummy flag file with filename for Makefile logic
+	cd $(RPMPKGOUTPUT_DIR); ls thriftpy*.rpm > $(DEPPKGDIR)/python-thriftpy-rpm 2> /dev/null
 
 $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	@echo 
 	@echo
-	@echo Building thriftpy Ubuntu Pkg
-	@echo    Using thriftpy from $(PYCAPNPGIT)
+	@echo Building Python pycapnp Debian Pkg
+	@echo    Using pycapnp from $(PYCAPNPGIT)
 	@echo -------------------------------------------------------------------------
 	@echo
 	#
@@ -221,12 +372,59 @@ $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	$(COPY) $(DEPPKGDIR)/python-pycapnp*.deb $(DEBPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd debian_package; ls python-pycapnp*.deb > $(DEPPKGDIR)/python-pycapnp-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls python-pycapnp*.deb > $(DEPPKGDIR)/python-pycapnp-deb 2> /dev/null
+
+$(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
+	@echo 
+	@echo
+	@echo Building Python pycapnp RPM Pkg
+	@echo    Using pycapnp from $(PYCAPNPGIT)
+	@echo -------------------------------------------------------------------------
+	@echo
+	#
+	# Hack: We don't have capnproto installed yet (needs priv to install and we
+	#       just built it. So we unpack library to temp directory and add it to paths
+	#       from temp directory
+	#
+	rm -rf $(TEMPDIR)
+	$(MKDIR) $(TEMPDIR)
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
+	# Build capnp pkg_config temp config
+	$(COPY) $(TEMPDIR)/usr/lib*/pkgconfig/*.pc $(TEMPDIR)/
+	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
+	# Get shlib info from libcapnp
+	$(MKDIR) $(TEMPDIR)/libcapnp-control
+	cd $(TEMPDIR)/libcapnp-control; rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-rpm) | cpio -idmv
+	#
+	# Create directory for depend packages and cleanup previous thriftpy packages
+	$(MKDIR) $(DEPPKGDIR)
+	rm -rf $(DEPPKGDIR)/pycapnp*
+	rm -rf $(DEPPKGDIR)/python-pycapnp*
+	rm -rf $(RPMPKGOUTPUT_DIR)/python-pycapnp*
+	#
+	# Build RPM package
+	git clone $(PYCAPNPGIT) $(DEPPKGDIR)/pycapnp
+	# add local paths for building
+	cd $(DEPPKGDIR)/pycapnp; CPATH=$(TEMPDIR)/usr/include \
+	LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
+	LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib:$(TEMPDIR)/usr/lib64 \
+	python setup.py bdist --formats=rpm
+	#
+	# Save Package to Output Directory
+	$(MKDIR) $(RPMPKGOUTPUT_DIR)
+	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*`arch`.rpm  $(RPMPKGOUTPUT_DIR)
+	# 
+	# Create dummy flag file with filename for Makefile logic
+	cd $(RPMPKGOUTPUT_DIR); ls pycapnp*.rpm > $(DEPPKGDIR)/python-pycapnp-rpm 2> /dev/null
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
 	$(RMDIR) $(DEBPKGBUILD_DIR)
 	$(RMDIR) $(DEBPKGOUTPUT_DIR)
+	$(RMDIR) $(RPMPKGBUILD_DIR)
+	$(RMDIR) $(RPMPKGOUTPUT_DIR)
 	$(RMDIR) $(DEPPKGDIR)
 	$(RMDIR) $(TEMPDIR)
 	$(RM) *.deb
@@ -235,5 +433,3 @@ clean:
 	$(RM) *.build
 	$(RM) *.dsc
 	$(RM) *.changes
-	
-	

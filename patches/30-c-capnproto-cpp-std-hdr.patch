@@ -1,0 +1,12 @@
+diff --git a/compiler/str.h b/compiler/str.h
+index fdd6523..fadcf82 100644
+--- a/compiler/str.h
++++ b/compiler/str.h
+@@ -9,6 +9,7 @@
+ 
+ #include <capn.h>
+ #include <stdlib.h>
++#include <stdarg.h>
+ 
+ struct str {
+ 	char *str;
