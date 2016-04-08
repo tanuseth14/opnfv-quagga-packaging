@@ -417,7 +417,7 @@ $(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*rpm_package/*{noarch,$(ARCH)}*.rpm $(RPMPKGOUTPUT_DIR) | true
+	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*{noarch,$(ARCH)}*.rpm $(RPMPKGOUTPUT_DIR) | true
 	# 
 	# Create dummy flag file with filename for Makefile logic
 	cd $(RPMPKGOUTPUT_DIR); ls pycapnp*.rpm > $(DEPPKGDIR)/python-pycapnp-rpm 2> /dev/null
