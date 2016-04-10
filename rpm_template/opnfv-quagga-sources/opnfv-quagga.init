@@ -52,7 +52,7 @@ case "$1" in
         if [ -f $PIDFILE ]; then
             DAEMONPID=`cat $PIDFILE`
             PARENTPID=`ps -o pgid= $DAEMONPID | grep -o '[0-9]*'`
-            if [ "$PPID" != "" ]; then
+            if [ "$PARENTPID" != "" ]; then
                 echo -n $"Shutting down $PROG: "
                 kill -TERM -$PARENTPID
                 RETVAL=$?

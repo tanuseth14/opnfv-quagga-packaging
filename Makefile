@@ -315,7 +315,6 @@ $(DEPPKGDIR)/python-thriftpy-rpm:
 	#
 	# Build debian package
 	git clone $(THRIFTPYGIT) $(DEPPKGDIR)/thriftpy
-	cd $(DEPPKGDIR)/thriftpy; $(PATCH) < $(THISDIR)/patches/110-thriftpy-disable-cython.patch
 	cd $(DEPPKGDIR)/thriftpy; $(PATCH) < $(THISDIR)/patches/120-thriftpy-make-cython-optional.patch
 	cd $(DEPPKGDIR)/thriftpy; python setup.py bdist --formats=rpm
 	#

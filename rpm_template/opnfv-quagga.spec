@@ -108,6 +108,7 @@ Source1:		opnfv-quagga.service
 Source2:		opnfv-quagga.init
 Source3:		qthriftd.conf
 Source4:		opnfv-quagga.sh
+Source5:		opnfv-quagga.init-suse
 URL:			%_SOURCEURL_%
 Requires:		ncurses, python-ply, thriftpy >= 0.3.2, libcapnp-0_5-99
 Requires(pre):	/sbin/install-info
@@ -125,6 +126,11 @@ Requires:		net-snmp
 BuildRequires:	readline readline-devel ncurses ncurses-devel
 Requires:		ncurses
 %endif
+%if %{?suse_version}
+PreReq:         %fillup_prereq
+PreReq:         %insserv_prereq
+PreReq:         %install_info_prereq
+%else
 %if "%{initsystem}" == "systemd"
 BuildRequires:		systemd
 Requires(post):		systemd
@@ -133,6 +139,7 @@ Requires(postun):	systemd
 %else
 # Initscripts > 5.60 is required for IPv6 support
 Requires(pre):		initscripts >= 5.60
+%endif
 %endif
 Provides:			routingdaemon = %{version}-%{release}
 BuildRoot:			%{_tmppath}/%{name}-%{version}-root
@@ -282,9 +289,15 @@ rm -rf %{buildroot}/usr/share/info/dir
 	install %{SOURCE1} \
 		%{buildroot}%{_unitdir}/opnfv-quagga.service
 %else
-	mkdir -p %{buildroot}/etc/rc.d/init.d
-	install %{SOURCE2} \
-		%{buildroot}/etc/rc.d/init.d/opnfv-quagga
+	%if %{?suse_version}
+		mkdir -p %{buildroot}/etc/init.d
+		install %{SOURCE5} \
+                	%{buildroot}/etc/init.d/opnfv-quagga
+	%else
+		mkdir -p %{buildroot}/etc/rc.d/init.d
+		install %{SOURCE2} \
+			%{buildroot}/etc/rc.d/init.d/opnfv-quagga
+	%endif
 %endif
 
 ###install -d -m750  %{buildroot}/var/run/quagga
@@ -346,7 +359,11 @@ zebra_spec_add_service isisd    2608/tcp "ISISd vty"
 zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 
+%if %{?suse_version}
+%install_info --info-dir=%{_infodir} %{_infodir}/%{name}.info.gz
+%else
 /sbin/install-info %{_infodir}/quagga.info.gz %{_infodir}/dir
+%endif
 
 if [ ! -e %{_sysconfdir}/qthriftd.conf ]; then
 	install %{SOURCE3} \
@@ -356,58 +373,73 @@ if [ ! -e %{_sysconfdir}/qthriftd.conf ]; then
 	%endif
 fi
 
-%if "%{initsystem}" == "systemd"
-	%systemd_post opnfv-quagga.service
-	systemctl enable opnfv-quagga
-	systemctl start opnfv-quagga
-%else
-	/sbin/chkconfig --add opnfv-quagga
+%if %{?suse_version}
+	%fillup_and_insserv 
 	/sbin/chkconfig opnfv-quagga on
 	/etc/init.d/opnfv-quagga start
+%else
+	%if "%{initsystem}" == "systemd"
+		%systemd_post opnfv-quagga.service
+		systemctl enable opnfv-quagga
+		systemctl start opnfv-quagga
+	%else
+		/sbin/chkconfig --add opnfv-quagga
+		/sbin/chkconfig opnfv-quagga on
+		/etc/init.d/opnfv-quagga start
+	%endif
 %endif
 
-
 %postun
-if [ "$1" -ge 1 ]; then
+%if %{?suse_version}
+	%install_info_delete --info-dir=%{_infodir} %{_infodir}/%{name}.info.gz
+	%restart_on_update opnfv-quagga
+	%insserv_cleanup
+%else
+	if [ "$1" -ge 1 ]; then
+		%if "%{initsystem}" == "systemd"
+			##
+			## Systemd Version
+			##
+			# Stop all daemons.
+			%systemd_postun opnfv-quagga.service
+			#
+			# Start all daemons.
+			%systemd_post opnfv-quagga.service
+		%else
+			##
+			## init.d Version
+			##
+			# Stop all daemons.
+			/etc/rc.d/init.d/opnfv-quagga stop >/dev/null 2>&1
+			#
+			# Start all daemons.
+			/etc/rc.d/init.d/opnfv-quagga start >/dev/null 2>&1
+		%endif
+	fi
+%endif
+
+%preun
+%if %{?suse_version}
+	%stop_on_removal opnfv-quagga
+%else
 	%if "%{initsystem}" == "systemd"
 		##
 		## Systemd Version
 		##
-		# Stop all daemons.
-		%systemd_postun opnfv-quagga.service
-		#
-		# Start all daemons.
-		%systemd_post opnfv-quagga.service
+		if [ "$1" = "0" ]; then
+			%systemd_preun opnfv-quagga.service
+		fi
 	%else
 		##
 		## init.d Version
 		##
-		# Stop all daemons.
-		/etc/rc.d/init.d/opnfv-quagga stop >/dev/null 2>&1
-		#
-		# Start all daemons.
-		/etc/rc.d/init.d/opnfv-quagga start >/dev/null 2>&1
+		if [ "$1" = "0" ]; then
+			/etc/rc.d/init.d/opnfv-quagga stop  >/dev/null 2>&1
+			/sbin/chkconfig --del opnfv-quagga
+		fi
 	%endif
-fi
-
-%preun
-%if "%{initsystem}" == "systemd"
-	##
-	## Systemd Version
-	##
-    if [ "$1" = "0" ]; then
-		%systemd_preun opnfv-quagga.service
-	fi
-%else
-	##
-	## init.d Version
-	##
-	if [ "$1" = "0" ]; then
-		/etc/rc.d/init.d/opnfv-quagga stop  >/dev/null 2>&1
-		/sbin/chkconfig --del opnfv-quagga
-	fi
+	/sbin/install-info --delete %{_infodir}/quagga.info.gz %{_infodir}/dir
 %endif
-/sbin/install-info --delete %{_infodir}/quagga.info.gz %{_infodir}/dir
 
 %clean
 %if !0%{?keep_build:1}
@@ -470,7 +502,11 @@ rm -rf %{buildroot}
 %if "%{initsystem}" == "systemd"
 %config %{_unitdir}/opnfv-quagga.service
 %else
+%if %{?suse_version}
+%config /etc/init.d/opnfv-quagga
+%else
 %config /etc/rc.d/init.d/opnfv-quagga
+%endif
 %endif
 
 %files contrib
