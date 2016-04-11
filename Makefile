@@ -60,6 +60,21 @@ RPMDATE := $(shell date -u +"%a %b %d %Y")
 # Finding correct target based on distribution
 TARGET := $(shell if test -s /etc/debian_version; then echo "debian"; elif ( test -s /etc/redhat-release ) || ( test -s /etc/SuSE-release ); then echo "rpm"; else echo "unknown";  fi)
 
+# Verify GCC/G++/CC Versions (Need 4.8 or higher)
+GCCVERSION_OK := $(shell expr `gcc -dumpversion | cut -f1,2 -d.` \>= 4.8)
+GCPPVERSION_OK := $(shell expr `g++ -dumpversion | cut -f1,2 -d.` \>= 4.8)
+CCVERSION_OK := $(shell expr `cc -dumpversion | cut -f1,2 -d.` \>= 4.8)
+ifneq "$(GCCVERSION_OK)" "1"
+$(error "Outdated GCC: gcc must be 4.8 or higher (Reports Version $(shell expr `gcc -dumpversion`))")
+endif
+ifneq "$(GCPPVERSION_OK)" "1"
+$(error "Outdated CC: cc must be 4.8 or higher (Reports Version $(shell expr `gcc -dumpversion`))")
+endif
+ifneq "$(CCVERSION_OK)" "1"
+$(error "Outdated C++: g++ must be 4.8 or higher (Reports Version $(shell expr `gcc -dumpversion`))")
+endif
+
+
 all: $(TARGET)
 
 rpm: $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES) $(DEPPKGDIR)/capnproto-rpm $(DEPPKGDIR)/python-thriftpy-rpm $(DEPPKGDIR)/python-pycapnp-rpm
