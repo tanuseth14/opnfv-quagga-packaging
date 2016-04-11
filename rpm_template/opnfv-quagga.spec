@@ -110,7 +110,7 @@ Source3:		qthriftd.conf
 Source4:		opnfv-quagga.sh
 Source5:		opnfv-quagga.init-suse
 URL:			%_SOURCEURL_%
-Requires:		ncurses, python-ply, thriftpy >= 0.3.2, libcapnp-0_5-99
+Requires:		ncurses, python-ply, thriftpy >= 0.3.2, libcapnp-0_5-99, python-pyzmq
 Requires(pre):	/sbin/install-info
 Requires(preun): /sbin/install-info
 Requires(post):	/sbin/install-info
@@ -300,7 +300,7 @@ rm -rf %{buildroot}/usr/share/info/dir
 	%endif
 %endif
 
-###install -d -m750  %{buildroot}/var/run/quagga
+install %{SOURCE3} %{buildroot}%{_sysconfdir}/qthriftd.conf
 
 %pre
 # add vty_group
@@ -365,13 +365,9 @@ zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 /sbin/install-info %{_infodir}/quagga.info.gz %{_infodir}/dir
 %endif
 
-if [ ! -e %{_sysconfdir}/qthriftd.conf ]; then
-	install %{SOURCE3} \
-		%{_sysconfdir}/qthriftd.conf
-	%if 0%{?quagga_user:1}
-		chown %quagga_user:%quagga_user %{_sysconfdir}/qthriftd.conf
-	%endif
-fi
+%if 0%{?quagga_user:1}
+	chown %quagga_user:%quagga_user %{_sysconfdir}/qthriftd.conf
+%endif
 
 %if %{?suse_version}
 	%fillup_and_insserv 
