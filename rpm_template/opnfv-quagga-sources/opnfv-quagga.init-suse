@@ -17,7 +17,8 @@ RETVAL=0
 PROG="opnfv-quagga"
 LOCK_FILE=/var/lock/subsys/opnfv-quagga
 EXECUTABLE=/usr/lib/quagga/qthrift/opnfv-quagga.sh
-PIDFILE=/var/run/quagga/opnfv-quagga.pid
+PIDDIR=/var/run/quagga
+PIDFILE=$PIDDIR/opnfv-quagga.pid
 
 test -x $EXECUTABLE || exit 5
 
@@ -60,6 +61,7 @@ case "$1" in
             (exit 4)
         fi
 
+	install -m 755 -o quagga -g quagga -d $PIDDIR
         startproc $EXECUTABLE
         if [ -f $PIDFILE ]; then
             if ps -p `cat $PIDFILE` >> /dev/null; then

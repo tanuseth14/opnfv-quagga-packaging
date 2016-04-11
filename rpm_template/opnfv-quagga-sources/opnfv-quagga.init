@@ -22,7 +22,8 @@ RETVAL=0
 PROG="opnfv-quagga"
 LOCK_FILE=/var/lock/subsys/opnfv-quagga
 EXECUTABLE=/usr/lib/quagga/qthrift/opnfv-quagga.sh
-PIDFILE=/var/run/quagga/opnfv-quagga.pid
+PIDDIR=/var/run/quagga
+PIDFILE=$PIDDIR/opnfv-quagga.pid
 
 case "$1" in
     start)
@@ -36,6 +37,7 @@ case "$1" in
             exit 4
         fi
 
+	install -m 755 -o quagga -g quagga -d $PIDDIR
         echo -n $"Starting $PROG: "
         nohup $EXECUTABLE >/dev/null 2>&1 &
         RETVAL=$?
