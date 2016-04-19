@@ -53,6 +53,10 @@ RPMPKGBUILD_DIR = quaggasrc-rpm
 RPMPKGOUTPUT_DIR = $(THISDIR)/rpm_package
 RPM_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_$(shell uname -m).rpm
 
+# Extra package directory - built and partially needed for building, but
+# not required on target system
+EXTRAPACKAGES_DIR = $(THISDIR)/extras
+
 # Build Date
 DATE := $(shell date -u +"%a, %d %b %Y %H:%M:%S %z")
 RPMDATE := $(shell date -u +"%a %b %d %Y")
@@ -98,9 +102,9 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	#       from temp directory
 	#
 	rm -rf $(TEMPDIR)
-	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
+	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
-	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
+	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
 	# Build capnp pkg_config temp config
 	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/*.pc $(TEMPDIR)/
 	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
@@ -147,8 +151,9 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	#    to be installed (needs 0.5.99 or higher)
 	cd $(DEBPKGBUILD_DIR); $(DEBUILD) --set-envvar PKG_CONFIG_PATH=$(TEMPDIR) --set-envvar LD_LIBRARY_PATH=$(TEMPDIR)/usr/lib --prepend-path $(TEMPDIR)/usr/bin -us -uc
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
-	$(COPY) $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
-
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEB_PACKAGES) $(DEBPKGOUTPUT_DIR)
+	$(MV) -f opnfv-quagga*.deb $(EXTRAPACKAGES_DIR) 2> /dev/null || true
 
 $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES): $(DEPPKGDIR)/capnproto-rpm
 	@echo 
@@ -165,9 +170,9 @@ $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES): $(DEPPKGDIR)/capnproto-rpm
 	#
 	rm -rf $(TEMPDIR)
 	$(MKDIR) $(TEMPDIR)
-	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
 	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-rpm) | cpio -idmv
-	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
 	# Build capnp pkg_config temp config
 	$(COPY) $(TEMPDIR)/usr/lib*/pkgconfig/*.pc $(TEMPDIR)/
 	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
@@ -224,7 +229,11 @@ $(RPMPKGOUTPUT_DIR)/$(RPM_PACKAGES): $(DEPPKGDIR)/capnproto-rpm
 		rpmbuild --define "_topdir `pwd`/rpmbuild" -ba rpmbuild/SPECS/opnfv-quagga.spec 
 	#
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*.rpm $(RPMPKGOUTPUT_DIR)
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*devel*.rpm $(EXTRAPACKAGES_DIR) 2> /dev/null || true
+	$(MV) -f $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*contrib*.rpm $(EXTRAPACKAGES_DIR) 2> /dev/null || true
+	$(MV) -f $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*debuginfo*.rpm $(EXTRAPACKAGES_DIR) 2> /dev/null || true
+	$(MV) -f $(RPMPKGBUILD_DIR)/rpmbuild/RPMS/*/*.rpm $(RPMPKGOUTPUT_DIR)
 
 $(DEPPKGDIR)/capnproto-deb:
 	@echo 
@@ -248,13 +257,15 @@ $(DEPPKGDIR)/capnproto-deb:
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/capnproto/capnproto*.deb $(DEBPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/capnproto/libcapnp*.deb $(DEBPKGOUTPUT_DIR)
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/capnproto*.deb $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/libcapnp-dev*.deb $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/libcapnp*.deb $(DEBPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd $(DEBPKGOUTPUT_DIR); ls capnproto*.deb > $(DEPPKGDIR)/capnproto-deb 2> /dev/null
-	cd $(DEBPKGOUTPUT_DIR); ls libcapnp-[0-9]*.deb > $(DEPPKGDIR)/libcapnp-deb 2> /dev/null
-	cd $(DEBPKGOUTPUT_DIR); ls libcapnp-dev*.deb > $(DEPPKGDIR)/libcapnp-dev-deb 2> /dev/null
+	cd $(EXTRAPACKAGES_DIR); ls capnproto*.deb > $(DEPPKGDIR)/capnproto-deb
+	cd $(EXTRAPACKAGES_DIR); ls libcapnp-dev*.deb > $(DEPPKGDIR)/libcapnp-dev-deb
+	cd $(DEBPKGOUTPUT_DIR); ls libcapnp-[0-9]*.deb > $(DEPPKGDIR)/libcapnp-deb
 
 $(DEPPKGDIR)/capnproto-rpm:
 	@echo
@@ -282,12 +293,15 @@ $(DEPPKGDIR)/capnproto-rpm:
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/*$(ARCH)*.rpm $(RPMPKGOUTPUT_DIR)
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/capnproto*$(ARCH)*.rpm $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/libcapnp-dev*$(ARCH)*.rpm $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/capnproto/rpmbuild/RPMS/*/libcapnp-[0-9]*$(ARCH)*.rpm $(RPMPKGOUTPUT_DIR)
 	#
 	# Create dummy flag file with filename for Makefile logic
-	cd $(RPMPKGOUTPUT_DIR); ls capnproto*.rpm > $(DEPPKGDIR)/capnproto-rpm 2> /dev/null
-	cd $(RPMPKGOUTPUT_DIR); ls libcapnp-[0-9]*.rpm > $(DEPPKGDIR)/libcapnp-rpm 2> /dev/null
-	cd $(RPMPKGOUTPUT_DIR); ls libcapnp-dev*.rpm > $(DEPPKGDIR)/libcapnp-dev-rpm 2> /dev/null
+	cd $(EXTRAPACKAGES_DIR); ls capnproto*.rpm > $(DEPPKGDIR)/capnproto-rpm
+	cd $(EXTRAPACKAGES_DIR); ls libcapnp-dev*.rpm > $(DEPPKGDIR)/libcapnp-dev-rpm
+	cd $(RPMPKGOUTPUT_DIR); ls libcapnp-[0-9]*.rpm > $(DEPPKGDIR)/libcapnp-rpm
 
 $(DEPPKGDIR)/python-thriftpy-deb:
 	@echo 
@@ -309,10 +323,10 @@ $(DEPPKGDIR)/python-thriftpy-deb:
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/python-thriftpy*.deb $(DEBPKGOUTPUT_DIR)
+	$(MV) -f $(DEPPKGDIR)/python-thriftpy*.deb $(DEBPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd $(DEBPKGOUTPUT_DIR); ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls python-thriftpy*.deb > $(DEPPKGDIR)/python-thriftpy-deb
 
 $(DEPPKGDIR)/python-thriftpy-rpm:
 	@echo 
@@ -335,10 +349,12 @@ $(DEPPKGDIR)/python-thriftpy-rpm:
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR) 
-	$(COPY) $(DEPPKGDIR)/thriftpy/dist/thriftpy*{noarch,$(ARCH)}*.rpm  $(RPMPKGOUTPUT_DIR) | true
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/thriftpy/dist/thriftpy*debuginfo*$(ARCH).rpm  $(EXTRAPACKAGES_DIR) 2> /dev/null || true
+	$(MV) -f $(DEPPKGDIR)/thriftpy/dist/thriftpy*$(ARCH)*.rpm  $(RPMPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd $(RPMPKGOUTPUT_DIR); ls thriftpy*.rpm > $(DEPPKGDIR)/python-thriftpy-rpm 2> /dev/null
+	cd $(RPMPKGOUTPUT_DIR); ls thriftpy*.rpm > $(DEPPKGDIR)/python-thriftpy-rpm
 
 $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	@echo 
@@ -353,9 +369,9 @@ $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	#       from temp directory
 	#
 	rm -rf $(TEMPDIR)
-	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
+	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
-	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
+	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
 	# Build capnp pkg_config temp config
 	$(COPY) $(TEMPDIR)/usr/lib/pkgconfig/*.pc $(TEMPDIR)/
 	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
@@ -385,10 +401,10 @@ $(DEPPKGDIR)/python-pycapnp-deb: $(DEPPKGDIR)/capnproto-deb
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(DEBPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/python-pycapnp*.deb $(DEBPKGOUTPUT_DIR)
+	$(MV) -f $(DEPPKGDIR)/python-pycapnp*.deb $(DEBPKGOUTPUT_DIR) 
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd $(DEBPKGOUTPUT_DIR); ls python-pycapnp*.deb > $(DEPPKGDIR)/python-pycapnp-deb 2> /dev/null
+	cd $(DEBPKGOUTPUT_DIR); ls python-pycapnp*.deb > $(DEPPKGDIR)/python-pycapnp-deb
 
 $(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
 	@echo 
@@ -404,9 +420,9 @@ $(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
 	#
 	rm -rf $(TEMPDIR)
 	$(MKDIR) $(TEMPDIR)
-	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-rpm) | cpio -idmv
 	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-rpm) | cpio -idmv
-	cd $(TEMPDIR); rpm2cpio $(RPMPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
+	cd $(TEMPDIR); rpm2cpio $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-rpm) | cpio -idmv
 	# Build capnp pkg_config temp config
 	$(COPY) $(TEMPDIR)/usr/lib*/pkgconfig/*.pc $(TEMPDIR)/
 	$(SED) -i 's|prefix=/usr|prefix=$(TEMPDIR)/usr|g' $(TEMPDIR)/*.pc
@@ -431,10 +447,12 @@ $(DEPPKGDIR)/python-pycapnp-rpm: $(DEPPKGDIR)/capnproto-rpm
 	#
 	# Save Package to Output Directory
 	$(MKDIR) $(RPMPKGOUTPUT_DIR)
-	$(COPY) $(DEPPKGDIR)/pycapnp/dist/pycapnp*{noarch,$(ARCH)}*.rpm $(RPMPKGOUTPUT_DIR) | true
+	$(MKDIR) $(EXTRAPACKAGES_DIR)
+	$(MV) -f $(DEPPKGDIR)/pycapnp/dist/pycapnp*debuginfo*$(ARCH).rpm $(EXTRAPACKAGES_DIR) 2> /dev/null || true
+	$(MV) -f $(DEPPKGDIR)/pycapnp/dist/pycapnp*$(ARCH).rpm $(RPMPKGOUTPUT_DIR)
 	# 
 	# Create dummy flag file with filename for Makefile logic
-	cd $(RPMPKGOUTPUT_DIR); ls pycapnp*.rpm > $(DEPPKGDIR)/python-pycapnp-rpm 2> /dev/null
+	cd $(RPMPKGOUTPUT_DIR); ls pycapnp*.rpm > $(DEPPKGDIR)/python-pycapnp-rpm
 
 clean:
 	@echo Cleaning files/directories for opnfv-quagga Package
@@ -442,6 +460,7 @@ clean:
 	$(RMDIR) $(DEBPKGOUTPUT_DIR)
 	$(RMDIR) $(RPMPKGBUILD_DIR)
 	$(RMDIR) $(RPMPKGOUTPUT_DIR)
+	$(RMDIR) $(EXTRAPACKAGES_DIR)
 	$(RMDIR) $(DEPPKGDIR)
 	$(RMDIR) $(TEMPDIR)
 	$(RM) *.deb

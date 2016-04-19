@@ -4,6 +4,7 @@ depend
 temp
 debian_package
 rpm_package
+extras
 opnfv-quagga_*.build
 opnfv-quagga_*.changes
 opnfv-quagga*.deb
