@@ -126,7 +126,7 @@ Requires:		net-snmp
 BuildRequires:	readline readline-devel ncurses ncurses-devel
 Requires:		ncurses
 %endif
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 PreReq:         %fillup_prereq
 PreReq:         %insserv_prereq
 PreReq:         %install_info_prereq
@@ -289,7 +289,7 @@ rm -rf %{buildroot}/usr/share/info/dir
 	install %{SOURCE1} \
 		%{buildroot}%{_unitdir}/opnfv-quagga.service
 %else
-	%if %{?suse_version}
+	%if 0%{?suse_version:1}
 		mkdir -p %{buildroot}/etc/init.d
 		install %{SOURCE5} \
                 	%{buildroot}/etc/init.d/opnfv-quagga
@@ -359,7 +359,7 @@ zebra_spec_add_service isisd    2608/tcp "ISISd vty"
 zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 %install_info --info-dir=%{_infodir} %{_infodir}/%{name}.info.gz
 %else
 /sbin/install-info %{_infodir}/quagga.info.gz %{_infodir}/dir
@@ -369,7 +369,7 @@ zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 	chown %quagga_user:%quagga_user %{_sysconfdir}/qthriftd.conf
 %endif
 
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 	%fillup_and_insserv 
 	/sbin/chkconfig opnfv-quagga on
 	/etc/init.d/opnfv-quagga start
@@ -386,7 +386,7 @@ zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 
 %postun
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 	%install_info_delete --info-dir=%{_infodir} %{_infodir}/%{name}.info.gz
 	%restart_on_update opnfv-quagga
 	%insserv_cleanup
@@ -415,7 +415,7 @@ zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 
 %preun
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 	%stop_on_removal opnfv-quagga
 %else
 	%if "%{initsystem}" == "systemd"
@@ -498,7 +498,7 @@ rm -rf %{buildroot}
 %if "%{initsystem}" == "systemd"
 %config %{_unitdir}/opnfv-quagga.service
 %else
-%if %{?suse_version}
+%if 0%{?suse_version:1}
 %config /etc/init.d/opnfv-quagga
 %else
 %config /etc/rc.d/init.d/opnfv-quagga

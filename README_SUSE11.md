@@ -42,6 +42,8 @@ and requirements for installing/running [Execution System](#execution-system) th
 The package requires a GNU C / C++ compiler of at least version 4.8 to build. SUSE 11 SP3 only
 provides up to 4.7.
 
+Note: __If you already have a gcc 4.8 or higher, then skip this step__
+
 The new version of GCC can be built as follows:
 
 1. Install a either GCC 4.3 or 4.7 (to build the new compiler) from SUSE's provided packages
