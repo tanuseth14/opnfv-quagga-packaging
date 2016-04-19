@@ -110,7 +110,7 @@ Source3:		qthriftd.conf
 Source4:		opnfv-quagga.sh
 Source5:		opnfv-quagga.init-suse
 URL:			%_SOURCEURL_%
-Requires:		ncurses, python-ply, thriftpy >= 0.3.2, libcapnp-0_5-99, python-pyzmq
+Requires:		ncurses, python-ply, thriftpy >= 0.3.2, libcapnp-0_5-99, python-pyzmq, python >= 2.6, python-argparse
 Requires(pre):	/sbin/install-info
 Requires(preun): /sbin/install-info
 Requires(post):	/sbin/install-info
