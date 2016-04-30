@@ -9,11 +9,11 @@ PIDFILE=/var/run/quagga/opnfv-quagga.pid
 
 # exit if old pid exists - otherwise create new pidfile
 if [ -f $PIDFILE ]; then
-    if ps -p `cat $PIDFILE`; then
+    if ps -p `cat $PIDFILE` >> /dev/null; then
 	exit 1
     fi
 fi
-echo $BASHPID > $PIDFILE
+echo $$ > $PIDFILE
 
 OPNFVCMDLINE=''
 
@@ -22,20 +22,20 @@ if [ -f /etc/quagga/qthriftd.conf ]; then
     . /etc/quagga/qthriftd.conf
 
     if [ -n "$odl_controller_IP" ]; then
-        CMDLINE="$CMDLINE --server-addr $odl_controller_IP"
+        OPNFVCMDLINE="$OPNFVCMDLINE --client-addr $odl_controller_IP"
     fi
     if [ -n "$odl_controller_thrift_port" ]; then
-        CMDLINE="$CMDLINE --server-port $odl_controller_thrift_port"
+        OPNFVCMDLINE="$OPNFVCMDLINE --client-port $odl_controller_thrift_port"
     fi
     if [ -n "$local_thrift_IP" ]; then
-        CMDLINE="$CMDLINE --client-addr $local_thrift_IP"
+        OPNFVCMDLINE="$OPNFVCMDLINE --server-addr $local_thrift_IP"
     fi
     if [ -n "$local_thrift_port" ]; then
-        CMDLINE="$CMDLINE --client-port $local_thrift_port"
+        OPNFVCMDLINE="$OPNFVCMDLINE --server-port $local_thrift_port"
     fi
     if [ "$qthriftd_debug_log" = "yes" ]; then
         # Use bgp template config with debug options
-        CMDLINE="$CMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
+        OPNFVCMDLINE="$OPNFVCMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
         # Enable logging
         rm -f /tmp/qthriftd-log-fifo
         mkfifo /tmp/qthriftd-log-fifo
@@ -44,5 +44,5 @@ if [ -f /etc/quagga/qthriftd.conf ]; then
     fi
 fi
 
-exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $CMDLINE 2>/dev/null
+exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $OPNFVCMDLINE 2>/dev/null
 

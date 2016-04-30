@@ -22,20 +22,20 @@ if [ -f /etc/quagga/qthriftd.conf ]; then
     . /etc/quagga/qthriftd.conf
 
     if [ -n "$odl_controller_IP" ]; then
-        OPNFVCMDLINE="$CMDLINE --server-addr $odl_controller_IP"
+        OPNFVCMDLINE="$OPNFVCMDLINE --client-addr $odl_controller_IP"
     fi
     if [ -n "$odl_controller_thrift_port" ]; then
-        OPNFVCMDLINE="$CMDLINE --server-port $odl_controller_thrift_port"
+        OPNFVCMDLINE="$OPNFVCMDLINE --client-port $odl_controller_thrift_port"
     fi
     if [ -n "$local_thrift_IP" ]; then
-        OPNFVCMDLINE="$CMDLINE --client-addr $local_thrift_IP"
+        OPNFVCMDLINE="$OPNFVCMDLINE --server-addr $local_thrift_IP"
     fi
     if [ -n "$local_thrift_port" ]; then
-        OPNFVCMDLINE="$CMDLINE --client-port $local_thrift_port"
+        OPNFVCMDLINE="$OPNFVCMDLINE --server-port $local_thrift_port"
     fi
     if [ "$qthriftd_debug_log" = "yes" ]; then
         # Use bgp template config with debug options
-        OPNFVCMDLINE="$CMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
+        OPNFVCMDLINE="$OPNFVCMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
         # Enable logging
         rm -f /tmp/qthriftd-log-fifo
         mkfifo /tmp/qthriftd-log-fifo
