@@ -1,0 +1,85 @@
+#!/bin/bash
+# chkconfig: - 15 85
+# config: /etc/quagga/qthriftd.conf
+
+### BEGIN INIT INFO
+# Provides:          opnfv-quagga
+# Required-Start:    $local_fs $remote_fs $network $named $syslog
+# Required-Stop:     $local_fs $remote_fs $network $named $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: OPNFV Quagga 
+# Description: Quagga with Thrift Interface for OPNFV
+### END INIT INFO
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+RETVAL=0
+PROG="opnfv-quagga"
+LOCK_FILE=/var/lock/subsys/opnfv-quagga
+EXECUTABLE=/usr/lib/quagga/qthrift/opnfv-quagga.sh
+PIDDIR=/var/run/quagga
+PIDFILE=$PIDDIR/opnfv-quagga.pid
+
+case "$1" in
+    start)
+        # Check that networking is up.
+        [ "${NETWORKING}" = "no" ] && exit 1
+
+        # The process must be configured first.
+        [ -f $CONF_FILE ] || exit 6
+        if [ `id -u` -ne 0 ]; then
+            echo $"Insufficient privilege" 1>&2
+            exit 4
+        fi
+
+	install -m 755 -o quagga -g quagga -d $PIDDIR
+        echo -n $"Starting $PROG: "
+        nohup $EXECUTABLE >/dev/null 2>&1 &
+        RETVAL=$?
+        PID=$!
+        disown $PID
+        [ $RETVAL -eq 0 ] && touch $LOCK_FILE && success || failure
+        echo
+        ;;
+    stop)
+        if [ `id -u` -ne 0 ]; then
+            echo $"Insufficient privilege" 1>&2
+            exit 4
+        fi
+        if [ -f $PIDFILE ]; then
+            DAEMONPID=`cat $PIDFILE`
+            PARENTPID=`ps -o pgid= $DAEMONPID | grep -o '[0-9]*'`
+            if [ "$PARENTPID" != "" ]; then
+                echo -n $"Shutting down $PROG: "
+                kill -TERM -$PARENTPID
+                RETVAL=$?
+                [ $RETVAL -eq 0 ] && rm -f $LOCK_FILE && success || failure
+                echo
+            fi  
+        fi
+        ;;
+    restart|reload|force-reload)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+    condrestart|try-restart)
+        if [ -f $PIDFILE ]; then
+            $0 stop
+            $0 start
+        fi
+        RETVAL=$?
+        ;;
+    status)
+        status $cmd
+        RETVAL=$?
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|restart|reload|force-reload|condrestart|try-restart|status}"
+        exit 2
+esac

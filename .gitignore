@@ -1,2 +1,14 @@
 quaggasrc
-opnfv-quagga*
+quaggasrc-rpm
+depend
+temp
+debian_package
+rpm_package
+extras
+opnfv-quagga_*.build
+opnfv-quagga_*.changes
+opnfv-quagga*.deb
+opnfv-quagga_*.debian.tar.gz
+opnfv-quagga_*.dsc
+opnfv-quagga_*.orig.tar.gz
+opnfv-quagga_*.debian.tar.xz

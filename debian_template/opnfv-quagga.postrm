@@ -5,8 +5,12 @@ ${DEBIAN_SCRIPT_TRACE:+ echo "#42#DEBUG# RUNNING $0 $*"}
 # set -u	not because of debhelper
 
 if [ "$1" = "purge" ]; then
-	rm -rf /etc/quagga /var/run/quagga /var/log/quagga
+	rm -rf /etc/quagga /var/run/quagga /var/log/quagga /usr/lib/quagga
   	userdel quagga >/dev/null 2>&1 || true
+fi
+
+if [ "$1" = purge ]; then
+	update-rc.d opnfv-quagga remove
 fi
 
 #DEBHELPER#

@@ -1,0 +1,86 @@
+#!/bin/bash
+# chkconfig: - 15 85
+# config: /etc/quagga/opnfv-quagga.conf
+
+### BEGIN INIT INFO
+# Provides:          opnfv-quagga
+# Required-Start:    $local_fs $remote_fs $network $named $syslog
+# Required-Stop:     $local_fs $remote_fs $network $named $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: OPNFV Quagga 
+# Description: Quagga with Thrift Interface for OPNFV
+### END INIT INFO
+
+# source init function library
+. /lib/lsb/init-functions
+
+RETVAL=0
+PROG="opnfv-quagga"
+OPNFVDIR=/usr/lib/quagga
+EXECUTABLE=$OPNFVDIR/qthrift/opnfv-quagga.sh
+PIDFILE=/var/run/quagga/opnfv-quagga.pid
+
+check_for_upstart() {
+    if init_is_upstart; then
+	exit $1
+    fi
+}
+
+case "$1" in
+    start)
+	check_for_upstart 1
+        # Check that networking is up.
+        [ "${NETWORKING}" = "no" ] && exit 1
+
+        # The process must be configured first.
+        [ -f $CONF_FILE ] || exit 6
+        if [ `id -u` -ne 0 ]; then
+            echo $"Insufficient privilege" 1>&2
+            exit 4
+        fi
+        log_daemon_msg "Starting OPNFV-Quagga" "opnfv-quagga" || true
+        if start-stop-daemon --start --background --pidfile $PIDFILE --exec $EXECUTABLE; then
+            log_end_msg 0 || true
+        else
+            log_end_msg 1 || true
+        fi
+        ;;
+    stop)
+	check_for_upstart 0
+        log_daemon_msg "Stopping OPNFV-Quagga" "opnfv-quagga" || true
+        # Deleting subprocesses first (bgpd and python subprocesses)
+        if start-stop-daemon --stop --ppid `cat $PIDFILE`; then
+            # now deleting the main process
+            if start-stop-daemon --stop --pidfile $PIDFILE --remove-pidfile; then
+                log_end_msg 0 || true
+            else
+                log_end_msg 1 || true
+            fi
+        else
+            log_end_msg 1 || true
+        fi
+        ;;
+    restart|reload|force-reload)
+	check_for_upstart 1
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+    condrestart|try-restart)
+        check_for_upstart 1
+        if [ -f $PIDFILE ]; then
+            $0 stop
+            $0 start
+        fi
+        RETVAL=$?
+        ;;
+    status)
+	check_for_upstart 1
+        status $cmd
+        RETVAL=$?
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|restart|reload|force-reload|condrestart|try-restart|status}"
+        exit 2
+esac

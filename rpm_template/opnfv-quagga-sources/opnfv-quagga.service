@@ -1,0 +1,12 @@
+[Unit]
+Description=OPNFV-Quagga
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStartPre=/usr/bin/install -m 755 -o quagga -g quagga -d /var/run/quagga
+ExecStart=/usr/lib/quagga/qthrift/opnfv-quagga.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

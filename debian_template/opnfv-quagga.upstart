@@ -1,0 +1,44 @@
+description "OPNFV-Quagga"
+author "mwinter@netdef.org"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+respawn limit 10 5
+
+pre-start script
+	test -f /etc/quagga/qthriftd.conf || { stop; exit 0; }
+	/usr/bin/install -m 755 -o quagga -g quagga -d /var/run/quagga
+end script
+
+script	
+	# Read configuration
+	. /etc/quagga/qthriftd.conf 
+
+	CMDLINE=''
+	if [ -n "$odl_controller_IP" ]; then
+		CMDLINE="$CMDLINE --server-addr $odl_controller_IP"
+	fi
+	if [ -n "$odl_controller_thrift_port" ]; then
+		CMDLINE="$CMDLINE --server-port $odl_controller_thrift_port"
+	fi
+	if [ -n "$local_thrift_IP" ]; then
+		CMDLINE="$CMDLINE --client-addr $local_thrift_IP"
+	fi
+	if [ -n "$local_thrift_port" ]; then
+		CMDLINE="$CMDLINE --client-port $local_thrift_port"
+	fi
+	if [ "$qthriftd_debug_log" = "yes" ]; then
+		# Use bgp template config with debug options
+		CMDLINE="$CMDLINE --config $OPNFVDIR/qthrift/bgpd-debug.conf"
+		# Enable logging
+		rm -f /tmp/qthriftd-log-fifo
+		mkfifo /tmp/qthriftd-log-fifo
+		( logger -t qthriftd </tmp/qthriftd-log-fifo & )
+		exec >/tmp/qthriftd-log-fifo
+	fi
+
+	exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $CMDLINE 2>/dev/null
+end script
+

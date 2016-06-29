@@ -2,3 +2,8 @@ opnfv-quagga: non-dev-pkg-with-shlib-symlink usr/lib/libospfapiclient.so.0.0.0 u
 opnfv-quagga: non-dev-pkg-with-shlib-symlink usr/lib/libospf.so.0.0.0 usr/lib/libospf.so
 opnfv-quagga: non-dev-pkg-with-shlib-symlink usr/lib/libzebra.so.0.0.0 usr/lib/libzebra.so
 opnfv-quagga: package-name-doesnt-match-sonames libospf0 libospfapiclient0 libzebra0
+# Lintian is unfortunately not debhelper-upstart savvy, Bug #717302
+#opnfv-quagga: postrm-does-not-call-updaterc.d-for-init.d-script
+#opnfv-quagga: init.d-script-not-marked-as-conffile
+#opnfv-quagga: init.d-script-not-included-in-package
+
