@@ -46,7 +46,7 @@ PKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
 DEBPKGBUILD_DIR = quaggasrc
 # The output dir for the packages needed to install
 DEBPKGOUTPUT_DIR = $(THISDIR)/debian_package
-DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
+DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_*.deb
 
 RPMPKGBUILD_DIR = quaggasrc-rpm
 # The output dir for the packages needed to install
