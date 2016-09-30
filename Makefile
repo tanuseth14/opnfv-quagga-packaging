@@ -46,7 +46,7 @@ PKGEMAIL = <$(shell whoami)@$(shell hostname --fqdn)>
 DEBPKGBUILD_DIR = quaggasrc
 # The output dir for the packages needed to install
 DEBPKGOUTPUT_DIR = $(THISDIR)/debian_package
-DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_amd64.deb
+DEB_PACKAGES = opnfv-quagga_$(VERSION)-$(RELEASE)_*.deb
 
 RPMPKGBUILD_DIR = quaggasrc-rpm
 # The output dir for the packages needed to install
@@ -102,6 +102,7 @@ $(DEBPKGOUTPUT_DIR)/$(DEB_PACKAGES): $(DEPPKGDIR)/capnproto-deb
 	#       from temp directory
 	#
 	rm -rf $(TEMPDIR)
+	rm -rf $(DEBPKGOUTPUT_DIR)/opnfv-quagga*.deb
 	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/capnproto-deb) $(TEMPDIR)
 	dpkg -x $(DEBPKGOUTPUT_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-deb) $(TEMPDIR)
 	dpkg -x $(EXTRAPACKAGES_DIR)/$(shell cat $(DEPPKGDIR)/libcapnp-dev-deb) $(TEMPDIR)
