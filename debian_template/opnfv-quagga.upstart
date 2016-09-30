@@ -12,9 +12,10 @@ pre-start script
 	/usr/bin/install -m 755 -o quagga -g quagga -d /var/run/quagga
 end script
 
-script	
+script
+	OPNFVDIR='/usr/lib/quagga'
 	# Read configuration
-	. /etc/quagga/qthriftd.conf 
+	. /etc/quagga/qthriftd.conf
 
 	CMDLINE=''
 	if [ -n "$odl_controller_IP" ]; then
@@ -41,4 +42,3 @@ script
 
 	exec /usr/lib/quagga/qthrift/odlvpn2bgpd.py $CMDLINE 2>/dev/null
 end script
-
